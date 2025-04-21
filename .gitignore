@@ -1,0 +1,33 @@
+# Flutter
+student_manager/.dart_tool/
+student_manager/.idea/
+student_manager/.packages
+student_manager/build/
+student_manager/ios/Flutter/Flutter.framework
+student_manager/ios/Flutter/Flutter.podspec
+student_manager/ios/Pods/
+student_manager/ios/.symlinks/
+student_manager/ios/Runner.xcworkspace/
+student_manager/.flutter-plugins
+student_manager/.flutter-plugins-dependencies
+student_manager/.metadata
+student_manager/pubspec.lock
+
+# Django
+student_manager_server/__pycache__/
+student_manager_server/db.sqlite3
+student_manager_server/*.pyc
+student_manager_server/*.pyo
+student_manager_server/*.pyd
+student_manager_server/env/
+student_manager_server/.env
+student_manager_server/staticfiles/
+student_manager_server/media/
+
+# General
+*.log
+.env
+.DS_Store
+.idea/
+.vscode/
+
