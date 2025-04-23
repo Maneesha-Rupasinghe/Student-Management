@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-#92))p+3zd_!1o+lt778z4q^$7u=90$((ae)rl8cc#vbq3xw2k
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "rest_framework",  # Django REST framework
     "rest_framework_simplejwt",  # JWT Authentication
     "users",  # The users app where we'll manage user registration
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
@@ -51,7 +52,9 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
 ]
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = "backend.urls"
 

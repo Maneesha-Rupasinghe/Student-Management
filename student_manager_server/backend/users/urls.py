@@ -7,6 +7,7 @@ from .views import (
     DeleteProfileView,
     GetQuizQuestions,
     RegisterView,
+    SaveQuizResultView,
     UpdateProfileView,
 )
 
@@ -19,6 +20,7 @@ urlpatterns = [
     path("questions/add/", AddQuizQuestionsView.as_view(), name="add-quiz-questions"),
     path("resources/add/", AddResourceView.as_view(), name="add-resource"),
     path("questions/", GetQuizQuestions.as_view(), name="get-quiz-questions"),
+    path('quiz/results/save/', SaveQuizResultView.as_view(), name='save-quiz-result'),
 ]
 
 

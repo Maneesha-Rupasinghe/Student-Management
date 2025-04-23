@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import QuizQuestion, Resource
+from .models import QuizQuestion, QuizResult, Resource
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -33,3 +33,9 @@ class ResourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Resource
         fields = ["subject", "resource", "study_level"]
+
+
+class QuizResultSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuizResult
+        fields = ['user', 'subject', 'level', 'results']

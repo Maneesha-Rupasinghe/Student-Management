@@ -1,5 +1,6 @@
 # users/models.py
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class QuizQuestion(models.Model):
@@ -48,3 +49,25 @@ class Resource(models.Model):
 
     def __str__(self):
         return f"{self.subject} - {self.study_level} - {self.resource}"
+
+
+class QuizResult(models.Model):
+    SUBJECT_CHOICES = [
+        ("DSA", "Data Structures & Algorithms"),
+        ("OOP", "Object-Oriented Programming"),
+        ("SE", "Software Engineering"),
+    ]
+
+    LEVEL_CHOICES = [
+        ("Beginner", "Beginner"),
+        ("Intermediate", "Intermediate"),
+        ("Advanced", "Advanced"),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    subject = models.CharField(max_length=28, choices=SUBJECT_CHOICES)
+    level = models.CharField(max_length=12, choices=LEVEL_CHOICES)
+    results = models.TextField()
+
+    def __str__(self):
+        return f"{self.user.username} - {self.subject} - {self.level} - {self.results}"

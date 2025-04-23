@@ -55,41 +55,41 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
 
       // Add the AnimatedNotchBottomBar here
-      bottomNavigationBar: AnimatedNotchBottomBar(
-        notchBottomBarController: _controller, // Pass the controller
-        bottomBarItems: [
-          BottomBarItem(
-            inActiveItem: Icon(Icons.home),
-            activeItem: Icon(Icons.home, color: Colors.blue),
-            itemLabel: 'Home',
-          ),
-          BottomBarItem(
-            inActiveItem: Icon(Icons.search),
-            activeItem: Icon(Icons.search, color: Colors.blue),
-            itemLabel: 'Search',
-          ),
-          BottomBarItem(
-            inActiveItem: Icon(Icons.notifications),
-            activeItem: Icon(Icons.notifications, color: Colors.blue),
-            itemLabel: 'Notifications',
-          ),
-          BottomBarItem(
-            inActiveItem: Icon(Icons.settings),
-            activeItem: Icon(Icons.settings, color: Colors.blue),
-            itemLabel: 'Settings',
-          ),
-        ],
-        onTap: (index) {
-          // Handle onTap event (optional)
-          print("Tapped item index: $index");
-        },
-        kIconSize: 24.0,
-        kBottomRadius: 28.0,
-        showShadow: true,
-        showLabel: true,
-        notchColor: Colors.white,
-        durationInMilliSeconds: 300,
-      ),
+      // bottomNavigationBar: AnimatedNotchBottomBar(
+      //   notchBottomBarController: _controller, // Pass the controller
+      //   bottomBarItems: [
+      //     BottomBarItem(
+      //       inActiveItem: Icon(Icons.home),
+      //       activeItem: Icon(Icons.home, color: Colors.blue),
+      //       itemLabel: 'Home',
+      //     ),
+      //     BottomBarItem(
+      //       inActiveItem: Icon(Icons.quiz_rounded),
+      //       activeItem: Icon(Icons.quiz_rounded, color: Colors.blue),
+      //       itemLabel: 'Quiz',
+      //     ),
+      //     BottomBarItem(
+      //       inActiveItem: Icon(Icons.notifications),
+      //       activeItem: Icon(Icons.notifications, color: Colors.blue),
+      //       itemLabel: 'Notifications',
+      //     ),
+      //     BottomBarItem(
+      //       inActiveItem: Icon(Icons.settings),
+      //       activeItem: Icon(Icons.settings, color: Colors.blue),
+      //       itemLabel: 'Settings',
+      //     ),
+      //   ],
+      //   onTap: (index) {
+      //     // Handle onTap event (optional)
+      //     print("Tapped item index: $index");
+      //   },
+      //   kIconSize: 24.0,
+      //   kBottomRadius: 28.0,
+      //   showShadow: true,
+      //   showLabel: true,
+      //   notchColor: Colors.white,
+      //   durationInMilliSeconds: 300,
+      // ),
     );
   }
 }

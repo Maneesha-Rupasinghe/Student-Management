@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
-from users.models import QuizQuestion
+from users.models import QuizQuestion, QuizResult
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 
 from .serializers import QuizQuestionSerializer, ResourceSerializer, UserSerializer
@@ -62,9 +63,6 @@ class DeleteProfileView(APIView):
         user = request.user  # Get the currently authenticated user
         user.delete()  # Delete the user profile
         return Response(status=status.HTTP_204_NO_CONTENT)  # Return success status
-
-
-from rest_framework_simplejwt.views import TokenObtainPairView
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -190,3 +188,38 @@ class GetQuizQuestions(APIView):
             )
 
         return Response({"questions": serialized_questions}, status=status.HTTP_200_OK)
+
+
+class SaveQuizResultView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        subject = data.get("subject")
+        level = data.get("level")
+        results = data.get("results")
+
+        if not subject or not level or not results:
+            return Response(
+                {"error": "Subject, level, and results are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Use update_or_create to handle both creating and updating results
+        quiz_result, created = QuizResult.objects.update_or_create(
+            user=request.user,
+            subject=subject,
+            level=level,
+            defaults={"results": results},
+        )
+
+        if created:
+            return Response(
+                {"message": "Quiz result created successfully!"},
+                status=status.HTTP_201_CREATED,
+            )
+        else:
+            return Response(
+                {"message": "Quiz result updated successfully!"},
+                status=status.HTTP_200_OK,
+            )
