@@ -472,7 +472,10 @@ def generate_study_plan(user, task_data, event_id):
 
     # Step 2: Retrieve Quiz Results
     try:
-        quiz_results = QuizResult.objects.filter(user=user)
+        quiz_results = QuizResult.objects.filter(
+            user=user, subject=task_data.get("subject")
+        )
+        print(f"Quiz results for {task_data.get('subject')}: {quiz_results.values()}")
     except QuizResult.DoesNotExist:
         return None, Response(
             {"error": "User quiz results not found."},
@@ -511,6 +514,7 @@ def generate_study_plan(user, task_data, event_id):
 
     # Step 4: Adjust Study Hours Based on Quiz Results
     study_hours_per_day = min(user_preference.hours_per_day, 4.0)
+    print(f"Initial study_hours_per_day: {study_hours_per_day}")
 
     advanced_result = quiz_results.filter(level="Advanced").first()
     intermediate_result = quiz_results.filter(level="Intermediate").first()
@@ -519,14 +523,22 @@ def generate_study_plan(user, task_data, event_id):
     def convert_to_float(percentage_str):
         return float(percentage_str.replace("%", "").strip()) if percentage_str else 0.0
 
+    adjustments = []
     if advanced_result and convert_to_float(advanced_result.results) > 60:
-        study_hours_per_day *= 0.7
-    elif intermediate_result and convert_to_float(intermediate_result.results) > 60:
-        study_hours_per_day *= 0.8
-    elif beginner_result and convert_to_float(beginner_result.results) > 60:
-        study_hours_per_day *= 0.9
+        adjustments.append(0.7)
+    if intermediate_result and convert_to_float(intermediate_result.results) > 60:
+        adjustments.append(0.8)
+    if beginner_result and convert_to_float(beginner_result.results) > 60:
+        adjustments.append(0.9)
+
+    if adjustments:
+        adjustment = min(adjustments)
+        print(f"Applying adjustment: {adjustment}")
+        study_hours_per_day *= adjustment
     else:
+        print("No adjustments applied, increasing hours")
         study_hours_per_day = min(study_hours_per_day + 0.5, 4.0)
+    print(f"Adjusted study_hours_per_day: {study_hours_per_day}")
 
     # Step 5: Calculate Study Plan Basics
     total_days = (exam_date - study_start_date).days  # Exclude exam_date
@@ -786,3 +798,56 @@ class UpdateStudyPlansView(APIView):
             response_data,
             status=status.HTTP_200_OK,
         )
+
+
+class CompletedTasksView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+
+    def get(self, request, *args, **kwargs):
+        user = request.user  # Get the currently authenticated user
+
+        # Debugging print to check the user
+        print(f"Authenticated user: {user.username}")
+
+        # Filter tasks where status is 'Complete' for the logged-in user
+        try:
+            completed_tasks = TaskEvent.objects.filter(user=user, status="Complete")
+            print(
+                f"Number of completed tasks found: {completed_tasks.count()}"
+            )  # Debugging print to check the number of tasks
+        except Exception as e:
+            print(f"Error fetching tasks: {str(e)}")
+            return Response(
+                {"error": "Error fetching tasks"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        if not completed_tasks:
+            print("No completed tasks found for this user.")
+            return Response(
+                {"error": "No completed tasks found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Serialize the data (You may want to create a serializer for TaskEvent)
+        task_data = []
+        for task in completed_tasks:
+            task_data.append(
+                {
+                    "id": task.id,
+                    "task_name": task.task_name,
+                    "subject": task.subject,
+                    "task_type": task.task_type,
+                    "start_date": task.start_date,
+                    "event_date": task.event_date,
+                    "estimated_study_hours": task.estimated_study_hours,
+                    "notes": task.notes,
+                    "priority": task.priority,
+                    "status": task.status,
+                }
+            )
+
+        # Debugging print to check what data is being returned
+        print(f"Returned task data: {task_data}")
+
+        return Response(task_data, status=status.HTTP_200_OK)

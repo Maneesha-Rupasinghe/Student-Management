@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:study_manager/screens/User_profile_screen.dart';
 import 'package:study_manager/screens/home_screen.dart';
-import 'package:study_manager/screens/user_account_screen.dart'; // Import your home screen
+import 'package:study_manager/screens/user_account_screen.dart';
+import 'package:study_manager/widgets/task/completed_task.dart'; // Import your home screen
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -71,6 +72,6 @@ class AccountTab extends StatelessWidget {
 class HistoryTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text('History Settings'));
+    return Center(child: CompletedTasksList());
   }
 }

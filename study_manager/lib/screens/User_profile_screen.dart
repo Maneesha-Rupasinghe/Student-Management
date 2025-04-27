@@ -26,9 +26,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final String? token = await _storage.read(key: 'access_token');
 
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please log in first')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please log in first')));
       return;
     }
 
@@ -57,21 +57,23 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(responseData['message'])),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(responseData['message'])));
       } else {
         final errorData = jsonDecode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to save preferences: ${errorData['error'] ?? response.statusCode}'),
+            content: Text(
+              'Failed to save preferences: ${errorData['error'] ?? response.statusCode}',
+            ),
           ),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving preferences: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error saving preferences: $e')));
       print("Error saving preferences: $e");
     }
   }
@@ -80,18 +82,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final String? token = await _storage.read(key: 'access_token');
 
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please log in first')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please log in first')));
       return;
     }
 
     try {
       final response = await http.get(
         Uri.parse('http://10.0.2.2:8000/api/user/preferences/'),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
+        headers: {'Authorization': 'Bearer $token'},
       );
 
       print("Fetch preferences response status: ${response.statusCode}");
@@ -100,23 +100,35 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         setState(() {
-          selectedStrengths = List<String>.from(responseData['strengths'] ?? []);
-          selectedWeaknesses = List<String>.from(responseData['weaknesses'] ?? []);
-          hoursPerDay = responseData['hours_per_day'] ?? 2;
-          daysPerWeek = responseData['days_per_week'] ?? 5;
-          preferredStudyTime = responseData['preferred_study_time'] ?? 'Morning';
+          selectedStrengths = List<String>.from(
+            responseData['strengths'] ?? [],
+          );
+          selectedWeaknesses = List<String>.from(
+            responseData['weaknesses'] ?? [],
+          );
+          // Handle hours_per_day: convert to int, since it's a FloatField in the backend
+          hoursPerDay = (responseData['hours_per_day'] ?? 2).toInt();
+          // Handle days_per_week: ensure it's an int, even if backend returns a double
+          daysPerWeek =
+              (responseData['days_per_week'] ?? 5) is int
+                  ? responseData['days_per_week']
+                  : (responseData['days_per_week'] ?? 5).toInt();
+          preferredStudyTime =
+              responseData['preferred_study_time'] ?? 'Morning';
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to fetch preferences: ${response.statusCode}'),
+            content: Text(
+              'Failed to fetch preferences: ${response.statusCode}',
+            ),
           ),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching preferences: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error fetching preferences: $e')));
       print("Error fetching preferences: $e");
     }
   }

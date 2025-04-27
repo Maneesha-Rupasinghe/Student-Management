@@ -17,12 +17,10 @@ class TaskService {
 
   List<Task> get tasks => _tasks;
 
-  // Add task locally (for UI display)
   void addTask(Task task) {
     _tasks.add(task);
   }
 
-  // Create a Task object
   Task createTask({
     required String taskName,
     required String subject,
@@ -47,10 +45,8 @@ class TaskService {
     );
   }
 
-  // Save task to backend
   Future<Map<String, dynamic>> saveTaskToBackend(Task task) async {
     try {
-      // Retrieve the access token from secure storage
       final String? token = await _storage.read(key: 'access_token');
 
       if (token == null) {
@@ -60,7 +56,6 @@ class TaskService {
         };
       }
 
-      // Prepare the request body
       final Map<String, dynamic> body = {
         'task_name': task.taskName,
         'subject': task.subject,
@@ -73,10 +68,8 @@ class TaskService {
         'skip_days': task.skipDays,
       };
 
-      // Debugging: Log the request body
       print('Sending task data: ${jsonEncode(body)}');
 
-      // Send POST request to save task
       final response = await http.post(
         Uri.parse(baseUrl),
         headers: {
@@ -86,20 +79,13 @@ class TaskService {
         body: jsonEncode(body),
       );
 
-      // Debugging: Log the response
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        // Assuming the backend returns the saved task or a success message
         final responseData = jsonDecode(response.body);
-
-        // Now that the task is created, get the task ID and create a Study Plan
         final taskEventId = responseData['task_event_id'];
-
-        // Call the Study Plan API with the task data
         await _createStudyPlan(taskEventId, task);
-
         return {'success': true, 'data': responseData};
       } else {
         return {
@@ -114,7 +100,6 @@ class TaskService {
     }
   }
 
-  // Create a Study Plan using the task ID and task data
   Future<void> _createStudyPlan(int taskEventId, Task task) async {
     try {
       final String? token = await _storage.read(key: 'access_token');
@@ -123,7 +108,6 @@ class TaskService {
         throw 'No access token found. Please log in first.';
       }
 
-      // Define the body for the study plan request using task data
       final Map<String, dynamic> studyPlanBody = {
         'subject': task.subject,
         'study_start_date': task.studyStartDate.toUtc().toIso8601String(),
@@ -132,10 +116,8 @@ class TaskService {
         'id': taskEventId,
       };
 
-      // Debugging: Log the study plan request
       print('Sending study plan data: ${jsonEncode(studyPlanBody)}');
 
-      // Send the POST request to create the study plan
       final response = await http.post(
         Uri.parse(studyPlanUrl),
         headers: {
@@ -145,7 +127,6 @@ class TaskService {
         body: jsonEncode(studyPlanBody),
       );
 
-      // Debugging: Log the response
       print('Study plan response status: ${response.statusCode}');
       print('Study plan response body: ${response.body}');
 
@@ -162,7 +143,6 @@ class TaskService {
     }
   }
 
-  // Update study plans after quiz results change
   Future<Map<String, dynamic>> updateStudyPlans(String subject) async {
     try {
       final String? token = await _storage.read(key: 'access_token');
@@ -174,23 +154,26 @@ class TaskService {
         };
       }
 
-      // Prepare the request body
       final Map<String, dynamic> body = {'subject': subject};
 
-      // Debugging: Log the request body
       print('Sending update study plans data: ${jsonEncode(body)}');
 
-      // Send POST request to update study plans
-      final response = await http.post(
-        Uri.parse(updateStudyPlansUrl),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(body),
-      );
+      final response = await http
+          .post(
+            Uri.parse(updateStudyPlansUrl),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(
+            Duration(seconds: 10),
+            onTimeout: () {
+              return http.Response('Request timed out', 408);
+            },
+          );
 
-      // Debugging: Log the response
       print('Update study plans response status: ${response.statusCode}');
       print('Update study plans response body: ${response.body}');
 

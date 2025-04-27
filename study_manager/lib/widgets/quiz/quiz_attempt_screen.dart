@@ -5,6 +5,11 @@ import 'package:http/http.dart' as http;
 import 'package:study_manager/widgets/quiz/quiz_results_screen.dart';
 import 'package:study_manager/widgets/task/task_service.dart';
 
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${substring(1)}";
+  }
+}
 
 class QuizAttemptScreen extends StatefulWidget {
   final String subject;
@@ -27,7 +32,7 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
   bool isLoading = true;
   String? errorMessage;
   final FlutterSecureStorage _storage = FlutterSecureStorage();
-  final TaskService _taskService = TaskService(); // Initialize TaskService
+  final TaskService _taskService = TaskService();
 
   @override
   void initState() {
@@ -42,7 +47,6 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
     });
 
     try {
-      // Retrieve the access token from secure storage
       final String? token = await _storage.read(key: 'access_token');
 
       if (token == null) {
@@ -101,22 +105,18 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
   void submitQuiz() async {
     int correctAnswers = 0;
 
-    // Calculate correct answers
     for (int i = 0; i < questions.length; i++) {
       if (userAnswers[i] == questions[i]['correct_answer']) {
         correctAnswers++;
       }
     }
 
-    // Calculate the percentage
     final percentage = (correctAnswers / questions.length * 100).toStringAsFixed(2);
     print("Correct Answers: $correctAnswers / ${questions.length}");
     print("Percentage: $percentage%");
 
-    // Save the quiz results and update study plans
     await _saveQuizResults(percentage);
 
-    // Navigate to the Quiz Result Screen
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -129,7 +129,6 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
   }
 
   Future<void> _saveQuizResults(String percentage) async {
-    // Retrieve the access token from secure storage
     final String? token = await _storage.read(key: 'access_token');
     print("Retrieved token: $token");
 
@@ -140,17 +139,15 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
       return;
     }
 
-    // Define the body of the POST request for quiz results
     final body = {
       'subject': widget.subject,
-      'level': widget.level,
+      'level': widget.level.capitalize(),
       'results': '$percentage%',
     };
 
     print("Quiz results request body: $body");
 
     try {
-      // Send the request to save quiz results
       final quizResponse = await http.post(
         Uri.parse('http://10.0.2.2:8000/api/quiz/results/save/'),
         headers: {
@@ -163,43 +160,50 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
       print("Quiz results response status: ${quizResponse.statusCode}");
       print("Quiz results response body: ${quizResponse.body}");
 
-      if (quizResponse.statusCode == 200) {
+      if (quizResponse.statusCode == 200 || quizResponse.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Quiz results saved successfully!')),
         );
 
-        // Update study plans for pending tasks with the same subject
-        final studyPlanResult = await _taskService.updateStudyPlans(widget.subject);
-        print("Study plans update result: $studyPlanResult");
+        print("About to call updateStudyPlans for subject: ${widget.subject}");
+        try {
+          final studyPlanResult = await _taskService.updateStudyPlans(widget.subject);
+          print("Study plans update result: $studyPlanResult");
 
-        if (studyPlanResult['success']) {
-          final updatedPlans = studyPlanResult['data']['updated_plans'] as List;
-          final errors = studyPlanResult['data']['errors'] as List;
-          if (updatedPlans.isNotEmpty) {
+          if (studyPlanResult['success']) {
+            final updatedPlans = studyPlanResult['data']['updated_plans'] as List;
+            final errors = studyPlanResult['data']['errors'] as List;
+            if (updatedPlans.isNotEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Updated ${updatedPlans.length} study plan(s) for ${widget.subject}'),
+                ),
+              );
+            } else if (studyPlanResult['data'].containsKey('message')) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(studyPlanResult['data']['message']),
+                ),
+              );
+            }
+            if (errors.isNotEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Some study plans failed to update: ${errors.length} error(s)'),
+                ),
+              );
+            }
+          } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Updated ${updatedPlans.length} study plan(s) for ${widget.subject}'),
-              ),
-            );
-          } else if (studyPlanResult['data'].containsKey('message')) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(studyPlanResult['data']['message']),
+                content: Text('Failed to update study plans: ${studyPlanResult['error']}'),
               ),
             );
           }
-          if (errors.isNotEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Some study plans failed to update: ${errors.length} error(s)'),
-              ),
-            );
-          }
-        } else {
+        } catch (e) {
+          print("Error in updateStudyPlans: $e");
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to update study plans: ${studyPlanResult['error']}'),
-            ),
+            SnackBar(content: Text('Error updating study plans: $e')),
           );
         }
       } else {
