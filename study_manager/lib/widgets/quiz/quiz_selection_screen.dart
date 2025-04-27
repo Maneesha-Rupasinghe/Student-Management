@@ -11,7 +11,7 @@ class QuizSelectionScreen extends StatefulWidget {
 class _QuizSelectionScreenState extends State<QuizSelectionScreen> {
   String? selectedSubject;
   String? selectedLevel;
-  final List<String> subjects = ['OOP', 'Database', 'Networking', 'Algorithms'];
+  final List<String> subjects = ['OOP', 'DSA', 'SE'];
   final List<String> levels = ['Beginner', 'Intermediate', 'Advanced'];
 
   @override

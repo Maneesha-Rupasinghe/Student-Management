@@ -11,16 +11,13 @@ class WeaknessesWidget extends StatelessWidget {
   });
 
   final List<String> weaknesses = [
-    "I am a little bit lazy",
-    "Very poor memory",
+   
     "Easily distracted",
-    "Have trouble focusing for long periods",
     "Tend to procrastinate often",
     "Find it hard to start studying without motivation",
     "Struggle with organizing tasks",
     "Have difficulty managing stress",
-    "Struggle with retaining information",
-    "Tend to overthink tasks and waste time",
+
   ];
 
   @override

@@ -12,15 +12,10 @@ class StrengthsWidget extends StatelessWidget {
 
   final List<String> strengths = [
     "Can work more than 3 hours continuously",
-    "Have good memory",
+    "Good at organizing tasks and time",
     "Quick learner",
     "Can stay focused for extended periods",
-    "Have a strong analytical mindset",
-    "Good at organizing tasks and time",
-    "Able to stay motivated without external push",
-    "Skilled at breaking down complex tasks",
     "Good at retaining information through reading",
-    "Can prioritize tasks efficiently",
   ];
 
   @override

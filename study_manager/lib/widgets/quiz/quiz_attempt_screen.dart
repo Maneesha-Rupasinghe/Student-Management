@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:study_manager/widgets/quiz/quiz_results_screen.dart';
+import 'package:study_manager/widgets/task/task_service.dart';
+
 
 class QuizAttemptScreen extends StatefulWidget {
   final String subject;
@@ -25,6 +27,7 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
   bool isLoading = true;
   String? errorMessage;
   final FlutterSecureStorage _storage = FlutterSecureStorage();
+  final TaskService _taskService = TaskService(); // Initialize TaskService
 
   @override
   void initState() {
@@ -43,7 +46,6 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
       final String? token = await _storage.read(key: 'access_token');
 
       if (token == null) {
-        // If the token is not available, show an error and return
         setState(() {
           errorMessage = 'No access token found. Please log in first.';
           isLoading = false;
@@ -56,8 +58,7 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
           'http://10.0.2.2:8000/api/questions/?subject=${widget.subject}&level=${widget.level}',
         ),
         headers: {
-          'Authorization':
-              'Bearer $token', // Include the token in the Authorization header
+          'Authorization': 'Bearer $token',
         },
       );
 
@@ -108,23 +109,21 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
     }
 
     // Calculate the percentage
-    final percentage = (correctAnswers / questions.length * 100)
-        .toStringAsFixed(2);
+    final percentage = (correctAnswers / questions.length * 100).toStringAsFixed(2);
     print("Correct Answers: $correctAnswers / ${questions.length}");
     print("Percentage: $percentage%");
 
-    // Save the quiz results to the API
+    // Save the quiz results and update study plans
     await _saveQuizResults(percentage);
 
     // Navigate to the Quiz Result Screen
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder:
-            (context) => QuizResultScreen(
-              correctAnswers: correctAnswers,
-              totalQuestions: questions.length,
-            ),
+        builder: (context) => QuizResultScreen(
+          correctAnswers: correctAnswers,
+          totalQuestions: questions.length,
+        ),
       ),
     );
   }
@@ -135,59 +134,86 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
     print("Retrieved token: $token");
 
     if (token == null) {
-      // If no token is available, show an error message
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please log in first')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please log in first')),
+      );
       return;
     }
 
-    // Define the body of the POST request
+    // Define the body of the POST request for quiz results
     final body = {
       'subject': widget.subject,
       'level': widget.level,
-      'results':
-          '$percentage%', // Send the percentage as a string with a percentage sign
+      'results': '$percentage%',
     };
 
-    print("Request body: $body"); // Debug the request body
+    print("Quiz results request body: $body");
 
     try {
-      // Send the request to the backend
-      final response = await http.post(
+      // Send the request to save quiz results
+      final quizResponse = await http.post(
         Uri.parse('http://10.0.2.2:8000/api/quiz/results/save/'),
         headers: {
-          'Authorization':
-              'Bearer $token', // Include the token in the Authorization header
+          'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
         body: jsonEncode(body),
       );
 
-      print("Response Status Code: ${response.statusCode}");
-      print("Response Body: ${response.body}");
+      print("Quiz results response status: ${quizResponse.statusCode}");
+      print("Quiz results response body: ${quizResponse.body}");
 
-      if (response.statusCode == 200) {
-        // Handle the response (e.g., show success message)
+      if (quizResponse.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Quiz results saved successfully!')),
         );
+
+        // Update study plans for pending tasks with the same subject
+        final studyPlanResult = await _taskService.updateStudyPlans(widget.subject);
+        print("Study plans update result: $studyPlanResult");
+
+        if (studyPlanResult['success']) {
+          final updatedPlans = studyPlanResult['data']['updated_plans'] as List;
+          final errors = studyPlanResult['data']['errors'] as List;
+          if (updatedPlans.isNotEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Updated ${updatedPlans.length} study plan(s) for ${widget.subject}'),
+              ),
+            );
+          } else if (studyPlanResult['data'].containsKey('message')) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(studyPlanResult['data']['message']),
+              ),
+            );
+          }
+          if (errors.isNotEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Some study plans failed to update: ${errors.length} error(s)'),
+              ),
+            );
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to update study plans: ${studyPlanResult['error']}'),
+            ),
+          );
+        }
       } else {
-        // Handle failure
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Failed to save quiz results: ${response.statusCode}',
-            ),
+            content: Text('Failed to save quiz results: ${quizResponse.statusCode}'),
           ),
         );
       }
     } catch (e) {
-      // Handle network or other errors
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error saving quiz results: $e')));
-      print("Error saving quiz results: $e"); // Print error for debugging
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving quiz results: $e')),
+      );
+      print("Error saving quiz results: $e");
     }
   }
 
@@ -245,8 +271,7 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 4.0),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        isSelected ? Colors.blue.shade100 : Colors.white,
+                    backgroundColor: isSelected ? Colors.blue.shade100 : Colors.white,
                     foregroundColor: Colors.black,
                     side: const BorderSide(color: Colors.grey),
                   ),
@@ -268,16 +293,13 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
                   child: const Text('Previous'),
                 ),
                 ElevatedButton(
-                  onPressed:
-                      currentQuestionIndex < questions.length - 1
-                          ? nextQuestion
-                          : userAnswers.length == questions.length
+                  onPressed: currentQuestionIndex < questions.length - 1
+                      ? nextQuestion
+                      : userAnswers.length == questions.length
                           ? submitQuiz
                           : null,
                   child: Text(
-                    currentQuestionIndex < questions.length - 1
-                        ? 'Next'
-                        : 'Submit',
+                    currentQuestionIndex < questions.length - 1 ? 'Next' : 'Submit',
                   ),
                 ),
               ],

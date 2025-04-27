@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:study_manager/screens/quize_selection_screen.dart';
 import 'package:study_manager/widgets/quiz/quiz_selection_screen.dart';
+
 
 class QuizMenuScreen extends StatelessWidget {
   const QuizMenuScreen({super.key});
@@ -26,9 +28,12 @@ class QuizMenuScreen extends StatelessWidget {
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                // TODO: Implement Add New Quiz functionality
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Add New Quiz - Coming Soon!')),
+                // Navigate to QuizSelectionScreen to add a new quiz
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddQuizSelectionScreen(),
+                  ),
                 );
               },
               child: const Text('Add New Quiz'),
