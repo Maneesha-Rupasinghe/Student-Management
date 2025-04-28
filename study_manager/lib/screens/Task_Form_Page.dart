@@ -76,6 +76,7 @@ class _TaskFormPageState extends State<TaskFormPage> {
       if (result['success']) {
         // Add task locally for UI
         TaskService().addTask(task);
+        
 
         // Show success message
         ScaffoldMessenger.of(

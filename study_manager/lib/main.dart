@@ -13,7 +13,8 @@ import 'screens/login_page.dart';
 import 'screens/register_page.dart';
 import 'screens/forgot_password_page.dart';
 
-void main() {
+void main() async {
+
   runApp(const MyApp());
 }
 
