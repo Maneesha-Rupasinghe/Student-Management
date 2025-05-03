@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import json
 import math
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -7,11 +8,20 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.models import User
+
+
+# from .utils import send_push_notification
 from users.models import QuizQuestion, QuizResult, StudyPlan, TaskEvent, UserPreference
 from rest_framework_simplejwt.views import TokenObtainPairView
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from .models import DeviceToken, Notification
+
+# from .utils import send_push_notification
 
 
 from .serializers import (
+    NotificationSerializer,
     QuizQuestionSerializer,
     ResourceSerializer,
     TaskEventSerializer,
@@ -851,3 +861,245 @@ class CompletedTasksView(APIView):
         print(f"Returned task data: {task_data}")
 
         return Response(task_data, status=status.HTTP_200_OK)
+
+
+class SaveDeviceTokenView(APIView):
+    permission_classes = [IsAuthenticated]  # Require authentication
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        token = data.get("device_token")
+
+        if not token:
+            return Response(
+                {"error": "Device token is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Use request.user to get the authenticated user
+        DeviceToken.objects.update_or_create(
+            user=request.user, defaults={"token": token}
+        )
+        return Response(
+            {"status": "Token saved successfully"}, status=status.HTTP_200_OK
+        )
+
+
+class UpdateStudyPlanView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, event_id, *args, **kwargs):
+        user = request.user
+        try:
+            study_plan = StudyPlan.objects.get(event_id_id=event_id, user=user)
+        except StudyPlan.DoesNotExist:
+            return Response(
+                {"error": "Study plan not found for the given event_id"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        updated_plan = request.data.get("plan")
+        if not updated_plan or not isinstance(updated_plan, list):
+            return Response(
+                {"error": "A valid study plan list is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate the updated plan
+        try:
+            for day in updated_plan:
+                if not all(
+                    key in day
+                    for key in [
+                        "study_date",
+                        "sessions",
+                        "subject",
+                        "study_time",
+                        "total_hours",
+                    ]
+                ):
+                    return Response(
+                        {
+                            "error": "Each day must include study_date, sessions, subject, study_time, and total_hours."
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                for session in day["sessions"]:
+                    if not all(
+                        key in session
+                        for key in ["start_time", "end_time", "hours_to_study"]
+                    ):
+                        return Response(
+                            {
+                                "error": "Each session must include start_time, end_time, and hours_to_study."
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    # Validate time format
+                    try:
+                        datetime.strptime(session["start_time"], "%H:%M")
+                        datetime.strptime(session["end_time"], "%H:%M")
+                    except ValueError:
+                        return Response(
+                            {"error": "Invalid time format. Use HH:MM."},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    # Validate hours_to_study
+                    if (
+                        not isinstance(session["hours_to_study"], (int, float))
+                        or session["hours_to_study"] <= 0
+                    ):
+                        return Response(
+                            {"error": "hours_to_study must be a positive number."},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                # Validate study_date format
+                try:
+                    datetime.strptime(day["study_date"], "%Y-%m-%d")
+                except ValueError:
+                    return Response(
+                        {"error": "Invalid date format. Use YYYY-MM-DD."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                # Validate total_hours
+                if (
+                    not isinstance(day["total_hours"], (int, float))
+                    or day["total_hours"] <= 0
+                ):
+                    return Response(
+                        {"error": "total_hours must be a positive number."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+        except Exception as e:
+            return Response(
+                {"error": f"Invalid plan format: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Update the study plan
+        study_plan.plan = updated_plan
+        study_plan.save()
+
+        # Send push notification
+        # notification_result = send_push_notification(
+        #     user_id=user.id,
+        #     title="Study Plan Updated",
+        #     body="Your study plan has been successfully updated.",
+        # )
+
+        # if "error" in notification_result:
+        #     print(f"Notification failed: {notification_result['error']}")
+
+        return Response(
+            {
+                "message": "Study plan updated successfully!",
+                "study_plan_id": study_plan.id,
+                "total_study_hours": sum(day["total_hours"] for day in updated_plan),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class SaveDeviceTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        token = request.data.get("token")
+        if not token:
+            return Response(
+                {"error": "Token is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        DeviceToken.objects.update_or_create(user=user, defaults={"token": token})
+        return Response({"success": "Token saved"}, status=status.HTTP_201_CREATED)
+
+
+class TestNotificationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        title = request.data.get("title", "Test Notification")
+        body = request.data.get("body", "This is a test notification.")
+        Notification.objects.create(user=request.user, title=title, body=body)
+        return Response(
+            {"success": "Notification saved"}, status=status.HTTP_201_CREATED
+        )
+
+class NotificationListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        notifications = Notification.objects.filter(user=request.user)
+        serializer = NotificationSerializer(notifications, many=True)
+        return Response(serializer.data)
+
+class NotificationSaveView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        title = request.data.get("title")
+        body = request.data.get("body")
+        if not title or not body:
+            return Response(
+                {"error": "Title and body are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        notification = Notification.objects.create(
+            user=request.user, title=title, body=body
+        )
+        serializer = NotificationSerializer(notification)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class TaskStatusUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, task_id):
+        try:
+            task = TaskEvent.objects.get(id=task_id, user=request.user)
+            status = request.data.get("status")
+            if not status:
+                return Response(
+                    {"error": "Status is required"}, status=status.HTTP_400_BAD_REQUEST
+                )
+            task.status = status
+            task.save()
+            Notification.objects.create(
+                user=request.user,
+                title="Task Status Updated",
+                body=f"Task '{task.task_name}' is now {status}",
+            )
+            return Response(TaskEventSerializer(task).data)
+        except TaskEvent.DoesNotExist:
+            return Response(
+                {"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+class NotificationReadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, notification_id):
+        try:
+            notification = Notification.objects.get(id=notification_id, user=request.user)
+            notification.is_read = not notification.is_read  # Toggle read/unread
+            notification.save()
+            serializer = NotificationSerializer(notification)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Notification.DoesNotExist:
+            return Response(
+                {"error": "Notification not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, notification_id):
+        try:
+            notification = Notification.objects.get(id=notification_id, user=request.user)
+            notification.is_read = not notification.is_read  # Toggle read/unread
+            notification.save()
+            serializer = NotificationSerializer(notification)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Notification.DoesNotExist:
+            return Response(
+                {"error": "Notification not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )

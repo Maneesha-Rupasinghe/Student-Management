@@ -33,7 +33,7 @@ class _CalendarSectionState extends State<CalendarSection> {
   Future<void> _fetchTasks() async {
     final String? token = await _storage.read(key: 'access_token');
     final response = await http.get(
-      Uri.parse('http://10.0.2.2:8000/api/tasks/'),
+      Uri.parse('http://192.168.1.4:8000/api/tasks/'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',

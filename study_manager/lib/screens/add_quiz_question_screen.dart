@@ -46,7 +46,7 @@ class _AddQuizQuestionScreenState extends State<AddQuizQuestionScreen> {
 
       // Send the question data to the backend
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/api/questions/add/'),
+        Uri.parse('http://192.168.1.4:8000/api/questions/add/'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

@@ -30,7 +30,7 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     // API endpoint for registration
-    final url = Uri.parse('http://10.0.2.2:8000/api/register/');
+    final url = Uri.parse('http://192.168.1.4:8000/api/register/');
 
     // Send the registration data
     final response = await http.post(

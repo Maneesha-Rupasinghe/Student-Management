@@ -11,10 +11,11 @@ class ProfileSection extends StatefulWidget {
 }
 
 class _ProfileSectionState extends State<ProfileSection> {
-  final _storage = FlutterSecureStorage();
+  final _storage = const FlutterSecureStorage();
   String _userName = '';
   String _email = '';
   double _quizPercentage = 0.0;
+  bool _showFullEmail = false;
 
   @override
   void initState() {
@@ -22,13 +23,11 @@ class _ProfileSectionState extends State<ProfileSection> {
     _fetchUserData();
   }
 
-  // Function to fetch user profile data and quiz percentage
   Future<void> _fetchUserData() async {
     final String? token = await _storage.read(key: 'access_token');
 
-    // Fetch user profile (name and email)
     final userProfileResponse = await http.get(
-      Uri.parse('http://10.0.2.2:8000/api/user/profile/'),
+      Uri.parse('http://192.168.1.4:8000/api/user/profile/'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -42,15 +41,11 @@ class _ProfileSectionState extends State<ProfileSection> {
         _email = userProfile['email'];
       });
     } else {
-      // Handle error if user profile data fetch fails
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to load user profile')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to load user profile')));
     }
 
-    // Fetch user quiz percentage
     final quizPercentageResponse = await http.get(
-      Uri.parse('http://10.0.2.2:8000/api/user/quiz-percentage/'),
+      Uri.parse('http://192.168.1.4:8000/api/user/quiz-percentage/'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -59,16 +54,22 @@ class _ProfileSectionState extends State<ProfileSection> {
 
     if (quizPercentageResponse.statusCode == 200) {
       final quizPercentageData = json.decode(quizPercentageResponse.body);
-      print(quizPercentageData);
       setState(() {
         _quizPercentage = quizPercentageData['overall_percentage'];
       });
     } else {
-      // Handle error if quiz percentage fetch fails
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to load quiz percentage')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to load quiz percentage')));
     }
+  }
+
+  String _getMaskedEmail(String email) {
+    final parts = email.split('@');
+    if (parts.length != 2) return '****';
+    final name = parts[0];
+    final domain = parts[1];
+
+    final visible = name.length > 3 ? name.substring(0, 3) : name;
+    return '$visible***@$domain';
   }
 
   @override
@@ -78,49 +79,48 @@ class _ProfileSectionState extends State<ProfileSection> {
       children: [
         Row(
           children: [
-            CircleAvatar(
+            const CircleAvatar(
               radius: 30,
-              backgroundImage: AssetImage(
-                'assets/profile.jpeg',
-              ), // Replace with user's profile image
+              backgroundImage: AssetImage('assets/profile.jpeg'),
             ),
-            SizedBox(width: 10),
+            const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _userName, // Display user's name
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  _userName,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                Text(
-                  _email, // Display user's email
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _showFullEmail = !_showFullEmail;
+                    });
+                  },
+                  child: Text(
+                    _showFullEmail ? _email : _getMaskedEmail(_email),
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
                 ),
               ],
             ),
           ],
         ),
-        // Add a row for quiz percentage and notification icon
         Row(
           children: [
             CircleAvatar(
               radius: 30,
               backgroundColor: Colors.blue,
               child: Text(
-                '${_quizPercentage.toStringAsFixed(0)}%', // Display quiz percentage
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                '${_quizPercentage.toStringAsFixed(0)}%',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
-            SizedBox(width: 10),
-            // Notification icon to the right of quiz percentage
+            const SizedBox(width: 10),
             IconButton(
-              icon: Icon(Icons.notifications, color: Colors.blue),
+              icon: const Icon(Icons.notifications, color: Colors.blue),
               onPressed: () {
-                // Handle notification icon press
-                print('Notification icon pressed');
+                Navigator.pushNamed(context, '/notifications');
               },
             ),
           ],

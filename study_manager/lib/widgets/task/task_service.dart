@@ -10,10 +10,10 @@ class TaskService {
 
   final List<Task> _tasks = [];
   final _storage = FlutterSecureStorage();
-  final String baseUrl = 'http://10.0.2.2:8000/api/task-event/save/';
-  final String studyPlanUrl = 'http://10.0.2.2:8000/api/study-plan/';
+  final String baseUrl = 'http://192.168.1.4:8000/api/task-event/save/';
+  final String studyPlanUrl = 'http://192.168.1.4:8000/api/study-plan/';
   final String updateStudyPlansUrl =
-      'http://10.0.2.2:8000/api/update-study-plans/';
+      'http://192.168.1.4:8000/api/update-study-plans/';
 
   List<Task> get tasks => _tasks;
 

@@ -19,7 +19,7 @@ class _CompletedTasksListState extends State<CompletedTasksList> {
     print("Fetching completed tasks..."); // Debugging print
 
     final response = await http.get(
-      Uri.parse('http://10.0.2.2:8000/api/tasks/completed/'),
+      Uri.parse('http://192.168.1.4:8000/api/tasks/completed/'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',

@@ -31,7 +31,7 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
     final String? token = await _storage.read(key: 'access_token');
 
     final response = await http.get(
-      Uri.parse('http://10.0.2.2:8000/api/user/profile/'),
+      Uri.parse('http://192.168.1.4:8000/api/user/profile/'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -62,7 +62,7 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
     };
 
     final response = await http.put(
-      Uri.parse('http://10.0.2.2:8000/api/profile/update/'),
+      Uri.parse('http://192.168.1.4:8000/api/profile/update/'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -97,7 +97,7 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
     };
 
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:8000/api/auth/password/change/'),
+      Uri.parse('http://192.168.1.4:8000/api/auth/password/change/'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -121,7 +121,7 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
     final String? token = await _storage.read(key: 'access_token');
 
     final response = await http.delete(
-      Uri.parse('http://10.0.2.2:8000/api/profile/delete/'),
+      Uri.parse('http://192.168.1.4:8000/api/profile/delete/'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',

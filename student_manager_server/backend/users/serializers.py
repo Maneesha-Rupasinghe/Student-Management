@@ -1,7 +1,14 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import QuizQuestion, QuizResult, Resource, TaskEvent, UserPreference
-
+from .models import (
+    DeviceToken,
+    Notification,
+    QuizQuestion,
+    QuizResult,
+    Resource,
+    TaskEvent,
+    UserPreference,
+)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -150,3 +157,17 @@ class UserPreferenceSerializer(serializers.ModelSerializer):
         if value < 1 or value > 7:
             raise serializers.ValidationError("Days per week must be between 1 and 7.")
         return value
+
+
+class DeviceTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeviceToken
+        fields = ["token"]
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ["id", "title", "body", "timestamp", "is_read"]
+
+

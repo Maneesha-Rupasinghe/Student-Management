@@ -59,11 +59,9 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
 
       final response = await http.get(
         Uri.parse(
-          'http://10.0.2.2:8000/api/questions/?subject=${widget.subject}&level=${widget.level}',
+          'http://192.168.1.4:8000/api/questions/?subject=${widget.subject}&level=${widget.level}',
         ),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
+        headers: {'Authorization': 'Bearer $token'},
       );
 
       if (response.statusCode == 200) {
@@ -111,7 +109,8 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
       }
     }
 
-    final percentage = (correctAnswers / questions.length * 100).toStringAsFixed(2);
+    final percentage = (correctAnswers / questions.length * 100)
+        .toStringAsFixed(2);
     print("Correct Answers: $correctAnswers / ${questions.length}");
     print("Percentage: $percentage%");
 
@@ -120,10 +119,11 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => QuizResultScreen(
-          correctAnswers: correctAnswers,
-          totalQuestions: questions.length,
-        ),
+        builder:
+            (context) => QuizResultScreen(
+              correctAnswers: correctAnswers,
+              totalQuestions: questions.length,
+            ),
       ),
     );
   }
@@ -133,9 +133,9 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
     print("Retrieved token: $token");
 
     if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please log in first')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please log in first')));
       return;
     }
 
@@ -149,7 +149,7 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
 
     try {
       final quizResponse = await http.post(
-        Uri.parse('http://10.0.2.2:8000/api/quiz/results/save/'),
+        Uri.parse('http://192.168.1.4:8000/api/quiz/results/save/'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -167,36 +167,43 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
 
         print("About to call updateStudyPlans for subject: ${widget.subject}");
         try {
-          final studyPlanResult = await _taskService.updateStudyPlans(widget.subject);
+          final studyPlanResult = await _taskService.updateStudyPlans(
+            widget.subject,
+          );
           print("Study plans update result: $studyPlanResult");
 
           if (studyPlanResult['success']) {
-            final updatedPlans = studyPlanResult['data']['updated_plans'] as List;
+            final updatedPlans =
+                studyPlanResult['data']['updated_plans'] as List;
             final errors = studyPlanResult['data']['errors'] as List;
             if (updatedPlans.isNotEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Updated ${updatedPlans.length} study plan(s) for ${widget.subject}'),
+                  content: Text(
+                    'Updated ${updatedPlans.length} study plan(s) for ${widget.subject}',
+                  ),
                 ),
               );
             } else if (studyPlanResult['data'].containsKey('message')) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(studyPlanResult['data']['message']),
-                ),
+                SnackBar(content: Text(studyPlanResult['data']['message'])),
               );
             }
             if (errors.isNotEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Some study plans failed to update: ${errors.length} error(s)'),
+                  content: Text(
+                    'Some study plans failed to update: ${errors.length} error(s)',
+                  ),
                 ),
               );
             }
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Failed to update study plans: ${studyPlanResult['error']}'),
+                content: Text(
+                  'Failed to update study plans: ${studyPlanResult['error']}',
+                ),
               ),
             );
           }
@@ -209,14 +216,16 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to save quiz results: ${quizResponse.statusCode}'),
+            content: Text(
+              'Failed to save quiz results: ${quizResponse.statusCode}',
+            ),
           ),
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving quiz results: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error saving quiz results: $e')));
       print("Error saving quiz results: $e");
     }
   }
@@ -275,7 +284,8 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 4.0),
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isSelected ? Colors.blue.shade100 : Colors.white,
+                    backgroundColor:
+                        isSelected ? Colors.blue.shade100 : Colors.white,
                     foregroundColor: Colors.black,
                     side: const BorderSide(color: Colors.grey),
                   ),
@@ -297,13 +307,16 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
                   child: const Text('Previous'),
                 ),
                 ElevatedButton(
-                  onPressed: currentQuestionIndex < questions.length - 1
-                      ? nextQuestion
-                      : userAnswers.length == questions.length
+                  onPressed:
+                      currentQuestionIndex < questions.length - 1
+                          ? nextQuestion
+                          : userAnswers.length == questions.length
                           ? submitQuiz
                           : null,
                   child: Text(
-                    currentQuestionIndex < questions.length - 1 ? 'Next' : 'Submit',
+                    currentQuestionIndex < questions.length - 1
+                        ? 'Next'
+                        : 'Submit',
                   ),
                 ),
               ],

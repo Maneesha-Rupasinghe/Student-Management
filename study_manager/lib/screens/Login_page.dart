@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../utils/fcm_utils.dart'; // Import the utility file
 
 class LoginPage extends StatefulWidget {
   @override
@@ -21,14 +22,8 @@ class _LoginPageState extends State<LoginPage> {
     final String password = _passwordController.text;
 
     try {
-      // final response = await http.post(
-      //   Uri.parse('http://127.0.0.1:8000/api/token/'),
-      //   body: {'username': username, 'password': password},
-      // );
       final response = await http.post(
-        Uri.parse(
-          'http://10.0.2.2:8000/api/token/',
-        ), // Use 10.0.2.2 instead of 127.0.0.1 for Android Emulator
+        Uri.parse('http://192.168.1.4:8000/api/token/'),
         body: {'username': username, 'password': password},
       );
 
@@ -46,6 +41,13 @@ class _LoginPageState extends State<LoginPage> {
 
         // Log the success message for debugging
         print("Login Successful: Tokens stored");
+
+        // Send the FCM token to the backend
+        if (fcmToken != null) {
+          await sendTokenToBackend(fcmToken!);
+        } else {
+          print('FCM token not available yet.');
+        }
 
         // Navigate to the home page
         Navigator.pushReplacementNamed(context, '/home');

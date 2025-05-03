@@ -44,7 +44,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/api/user/preferences/'),
+        Uri.parse('http://192.168.1.4:8000/api/user/preferences/'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -90,7 +90,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/user/preferences/'),
+        Uri.parse('http://192.168.1.4:8000/api/user/preferences/'),
         headers: {'Authorization': 'Bearer $token'},
       );
 

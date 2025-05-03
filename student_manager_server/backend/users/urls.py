@@ -9,12 +9,19 @@ from .views import (
     DeleteQuizQuestionView,
     GetQuizQuestions,
     GetStudyPlanView,
+    NotificationListView,
+    NotificationReadView,
+    NotificationSaveView,
     RegisterView,
+    SaveDeviceTokenView,
     SaveQuizResultView,
     SaveTaskEventView,
     StudyPlanView,
     TaskEventListView,
+    TaskStatusUpdateView,
+    TestNotificationView,
     UpdateProfileView,
+    UpdateStudyPlanView,
     UpdateStudyPlansView,
     UpdateTaskStatusView,
     UserPreferenceView,
@@ -37,7 +44,7 @@ urlpatterns = [
     path("study-plan/", StudyPlanView.as_view(), name="study-plan"),
     path("tasks/", TaskEventListView.as_view(), name="get-tasks"),
     path(
-        "tasks/<int:task_id>/status/",
+        "tasks/<int:task_id>/update-status/",
         UpdateTaskStatusView.as_view(),
         name="update-task-status",
     ),
@@ -61,10 +68,23 @@ urlpatterns = [
         "update-study-plans/", UpdateStudyPlansView.as_view(), name="update_study_plans"
     ),
     path("tasks/completed/", CompletedTasksView.as_view(), name="completed-tasks"),
+    path(
+        "study-plan/update/<int:event_id>/",
+        UpdateStudyPlanView.as_view(),
+        name="update-study-plan",
+    ),
+    path("save-device-token/", SaveDeviceTokenView.as_view(), name="save-device-token"),
+    path(
+        "test-notification/", TestNotificationView.as_view(), name="test-notification"
+    ),
+    path(
+        "tasks/<int:task_id>/status/",
+        TaskStatusUpdateView.as_view(),
+        name="task-status-update",
+    ),
+    path("notifications/", NotificationListView.as_view(), name="notification-list"),
+    path(
+        "notifications/save/", NotificationSaveView.as_view(), name="notification-save"
+    ),
+      path("notifications/<int:notification_id>/read/", NotificationReadView.as_view(), name="notification-read"),
 ]
-
-
-# {
-#     "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc1Mzg1NzQyNSwiaWF0IjoxNzQ1MjE3NDI1LCJqdGkiOiJlYTExMjc0NDVlYzA0Yzk3YmYxZTY3MDA5NzVhYjNjMCIsInVzZXJfaWQiOjF9.jPgUPnNAni7b3Yw1Sa6iEkwnXRX5zxpUWrRMAtk-0qY",
-#     "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ4ODE3NDI1LCJpYXQiOjE3NDUyMTc0MjUsImp0aSI6ImFmZDNkNjRmODhiOTQ4YTNhZjQ4ZWQ2MTc5NzZjNTk1IiwidXNlcl9pZCI6MX0.NQYDXcyEKzBO3c7YL9bpMIiOEbYMQ5rF00aQdDK8kAk"
-# }
