@@ -7,11 +7,15 @@ from .views import (
     CustomTokenRefreshView,
     DeleteProfileView,
     DeleteQuizQuestionView,
+    GetAllStudyPlansView,
     GetQuizQuestions,
+    GetQuizResultsView,
+    GetRecommendedResourcesView,
     GetStudyPlanView,
     NotificationListView,
     NotificationReadView,
     NotificationSaveView,
+    QuizResultSaveView,
     RegisterView,
     SaveDeviceTokenView,
     SaveQuizResultView,
@@ -86,5 +90,21 @@ urlpatterns = [
     path(
         "notifications/save/", NotificationSaveView.as_view(), name="notification-save"
     ),
-      path("notifications/<int:notification_id>/read/", NotificationReadView.as_view(), name="notification-read"),
+    path(
+        "notifications/<int:notification_id>/read/",
+        NotificationReadView.as_view(),
+        name="notification-read",
+    ),
+    path("study-plans/", GetAllStudyPlansView.as_view(), name="get-all-study-plans"),
+    path(
+        "api/quiz/results/save/", QuizResultSaveView.as_view(), name="quiz-results-save"
+    ),
+    path(
+        "quiz/results_progress/", GetQuizResultsView.as_view(), name="get-quiz-results"
+    ),
+    path(
+        "users_resources/",
+        GetRecommendedResourcesView.as_view(),
+        name="get-recommended-resources",
+    ),
 ]

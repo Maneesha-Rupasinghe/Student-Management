@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:study_manager/widgets/user/strength.dart';
 import 'package:study_manager/widgets/user/study_preferences.dart';
 import 'package:study_manager/widgets/user/weakness.dart';
+import 'package:study_manager/widgets/bottom_bar/notch_bottom_bar_controller.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -20,15 +21,25 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   int daysPerWeek = 5;
   String preferredStudyTime = "Morning";
 
-  final _storage = FlutterSecureStorage();
+  final _storage = const FlutterSecureStorage();
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? const Color(0xFFF44336) : const Color(0xFF4CAF50),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
 
   void _submitProfile() async {
     final String? token = await _storage.read(key: 'access_token');
 
     if (token == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please log in first')));
+      _showSnackBar('Please log in first', isError: true);
       return;
     }
 
@@ -57,23 +68,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(responseData['message'])));
+        _showSnackBar(responseData['message'], isError: false);
       } else {
         final errorData = jsonDecode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to save preferences: ${errorData['error'] ?? response.statusCode}',
-            ),
-          ),
-        );
+        _showSnackBar('Failed to save preferences: ${errorData['error'] ?? response.statusCode}', isError: true);
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error saving preferences: $e')));
+      _showSnackBar('Error saving preferences: $e', isError: true);
       print("Error saving preferences: $e");
     }
   }
@@ -82,9 +83,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final String? token = await _storage.read(key: 'access_token');
 
     if (token == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please log in first')));
+      _showSnackBar('Please log in first', isError: true);
       return;
     }
 
@@ -100,35 +99,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         setState(() {
-          selectedStrengths = List<String>.from(
-            responseData['strengths'] ?? [],
-          );
-          selectedWeaknesses = List<String>.from(
-            responseData['weaknesses'] ?? [],
-          );
-          // Handle hours_per_day: convert to int, since it's a FloatField in the backend
+          selectedStrengths = List<String>.from(responseData['strengths'] ?? []);
+          selectedWeaknesses = List<String>.from(responseData['weaknesses'] ?? []);
           hoursPerDay = (responseData['hours_per_day'] ?? 2).toInt();
-          // Handle days_per_week: ensure it's an int, even if backend returns a double
-          daysPerWeek =
-              (responseData['days_per_week'] ?? 5) is int
-                  ? responseData['days_per_week']
-                  : (responseData['days_per_week'] ?? 5).toInt();
-          preferredStudyTime =
-              responseData['preferred_study_time'] ?? 'Morning';
+          daysPerWeek = (responseData['days_per_week'] ?? 5) is int
+              ? responseData['days_per_week']
+              : (responseData['days_per_week'] ?? 5).toInt();
+          preferredStudyTime = responseData['preferred_study_time'] ?? 'Morning';
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to fetch preferences: ${response.statusCode}',
-            ),
-          ),
-        );
+        _showSnackBar('Failed to fetch preferences: ${response.statusCode}', isError: true);
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error fetching preferences: $e')));
+      _showSnackBar('Error fetching preferences: $e', isError: true);
       print("Error fetching preferences: $e");
     }
   }
@@ -142,10 +125,27 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Settings'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // Reset the bottom navigation bar index to Home (index 0)
+            final _controller = NotchBottomBarController(index: 0);
+            _controller.jumpTo(0);
+            Navigator.popUntil(context, ModalRoute.withName('/home'));
+          },
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
+            Text(
+              'Select Your Strengths',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 10),
             StrengthsWidget(
               selectedStrengths: selectedStrengths,
               onChanged: (selected) {
@@ -155,6 +155,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               },
             ),
             const SizedBox(height: 20),
+            Text(
+              'Select Your Weaknesses',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 10),
             WeaknessesWidget(
               selectedWeaknesses: selectedWeaknesses,
               onChanged: (selected) {
@@ -185,14 +190,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               },
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _submitProfile,
-              child: const Text("Submit"),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _submitProfile,
+                child: const Text("Submit"),
               ),
             ),
           ],

@@ -100,44 +100,92 @@ class _NotificationScreenState extends State<NotificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Notifications')),
-      body:
-          isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : notifications.isEmpty
-              ? const Center(child: Text('No notifications found'))
-              : ListView.builder(
-                itemCount: notifications.length,
-                itemBuilder: (context, index) {
-                  final notification = notifications[index];
-                  return ListTile(
-                    title: Text(
-                      notification['title'],
-                      style: TextStyle(
-                        fontWeight:
+      appBar: AppBar(
+        title: const Text(
+          'Notifications',
+          style: TextStyle(color: Colors.white),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF3674B5), Color(0xFF3674B5)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child:
+              isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : notifications.isEmpty
+                  ? const Center(
+                    child: Text(
+                      'No notifications found',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  )
+                  : ListView.builder(
+                    padding: const EdgeInsets.all(8),
+                    itemCount: notifications.length,
+                    itemBuilder: (context, index) {
+                      final notification = notifications[index];
+                      return Card(
+                        elevation: 2,
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        color:
                             notification['is_read']
-                                ? FontWeight.normal
-                                : FontWeight.bold,
-                      ),
-                    ),
-                    subtitle: Text(notification['body']),
-                    trailing: Text(
-                      notification['timestamp'].substring(0, 16),
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    tileColor:
-                        notification['is_read']
-                            ? Colors.grey[200]
-                            : Colors.white,
-                    onTap: () {
-                      _toggleReadStatus(
-                        notification['id'],
-                        notification['is_read'],
+                                ? Colors.grey[200]
+                                : const Color(0xFF3674B5).withOpacity(0.1),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(12),
+                          title: Text(
+                            notification['title'],
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight:
+                                  notification['is_read']
+                                      ? FontWeight.normal
+                                      : FontWeight.bold,
+                              color:
+                                  notification['is_read']
+                                      ? Colors.black87
+                                      : const Color(0xFF3674B5),
+                            ),
+                          ),
+                          subtitle: Text(
+                            notification['body'],
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                          trailing: Text(
+                            notification['timestamp'].substring(0, 16),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          onTap: () {
+                            _toggleReadStatus(
+                              notification['id'],
+                              notification['is_read'],
+                            );
+                          },
+                        ),
                       );
                     },
-                  );
-                },
-              ),
+                  ),
+        ),
+      ),
     );
   }
 }

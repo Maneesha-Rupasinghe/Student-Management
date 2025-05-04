@@ -195,6 +195,7 @@ class DeviceToken(models.Model):
         return f"{self.user.username} - {self.token}"
 
 class Notification(models.Model):
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
     title = models.CharField(max_length=255)
     body = models.TextField()
@@ -206,3 +207,4 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.user.username}"
+    

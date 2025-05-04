@@ -9,6 +9,7 @@ class StudyPlanEditor extends StatefulWidget {
   final String subject;
   final String startDate;
   final String examDate;
+  final VoidCallback? onPlanSaved;
 
   const StudyPlanEditor({
     Key? key,
@@ -16,6 +17,7 @@ class StudyPlanEditor extends StatefulWidget {
     required this.subject,
     required this.startDate,
     required this.examDate,
+    this.onPlanSaved,
   }) : super(key: key);
 
   @override
@@ -106,7 +108,7 @@ class _StudyPlanEditorState extends State<StudyPlanEditor> {
         });
       } else if (response.statusCode == 401) {
         if (await _refreshToken()) {
-          await _fetchStudyPlan(); // Retry with new token
+          await _fetchStudyPlan();
         } else {
           setState(() {
             isLoading = false;
@@ -191,10 +193,11 @@ class _StudyPlanEditorState extends State<StudyPlanEditor> {
         setState(() {
           isLoading = false;
         });
-        Navigator.pop(context); // Return to task list
+        widget.onPlanSaved?.call();
+        Navigator.pop(context);
       } else if (response.statusCode == 401) {
         if (await _refreshToken()) {
-          await _saveStudyPlan(); // Retry with new token
+          await _saveStudyPlan();
         } else {
           setState(() {
             isLoading = false;
@@ -320,9 +323,21 @@ class _StudyPlanEditorState extends State<StudyPlanEditor> {
           onChanged(formattedTime);
         }
       },
-      child: InputDecorator(
-        decoration: InputDecoration(labelText: label),
-        child: Text(initialValue),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: label,
+            filled: true,
+            fillColor: Colors.grey[50],
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+          ),
+          child: Text(initialValue, style: const TextStyle(fontSize: 16)),
+        ),
       ),
     );
   }
@@ -331,92 +346,178 @@ class _StudyPlanEditorState extends State<StudyPlanEditor> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Edit Study Plan - ${widget.subject}'),
+        title: Text(
+          'Edit Study Plan - ${widget.subject}',
+          style: const TextStyle(color: Colors.black),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFB4EBE6), Color(0xFFB4EBE6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         actions: [
           if (!isLoading)
-            IconButton(icon: const Icon(Icons.save), onPressed: _saveStudyPlan),
+            IconButton(
+              icon: const Icon(Icons.save, color: Colors.black),
+              onPressed: _saveStudyPlan,
+            ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addDay,
-        child: const Icon(Icons.add),
-        tooltip: 'Add Study Day',
+      floatingActionButton: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF3674B5), Color(0xFF3674B5)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.all(Radius.circular(28)),
+        ),
+        child: FloatingActionButton(
+          onPressed: _addDay,
+          backgroundColor: Colors.transparent,
+          elevation: 4,
+          child: const Icon(Icons.add, color: Colors.white),
+        ),
       ),
-      body:
-          isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : errorMessage.isNotEmpty
-              ? Center(
-                child: Text(
-                  errorMessage,
-                  style: const TextStyle(color: Colors.red),
-                ),
-              )
-              : studyPlan.isEmpty
-              ? const Center(child: Text('No study plan available.'))
-              : ListView.builder(
-                itemCount: studyPlan.length,
-                itemBuilder: (context, dayIndex) {
-                  final day = studyPlan[dayIndex];
-                  return ExpansionTile(
-                    title: Text(
-                      'Date: ${day['study_date']} (${day['total_hours']} hours)',
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child:
+              isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : errorMessage.isNotEmpty
+                  ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        errorMessage,
+                        style: const TextStyle(color: Colors.red, fontSize: 16),
+                      ),
                     ),
-                    subtitle: Text('Subject: ${day['subject']}'),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => _deleteDay(dayIndex),
+                  )
+                  : studyPlan.isEmpty
+                  ? const Center(
+                    child: Text(
+                      'No study plan available.',
+                      style: TextStyle(fontSize: 16),
                     ),
-                    children:
-                        day['sessions'].asMap().entries.map<Widget>((entry) {
-                            final sessionIndex = entry.key;
-                            final session = entry.value;
-                            return ListTile(
-                              title: Text('Session ${sessionIndex + 1}'),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildTimePicker(
-                                    'Start Time',
-                                    session['start_time'],
-                                    (value) => _updateSession(
-                                      dayIndex,
-                                      sessionIndex,
-                                      'start_time',
-                                      value,
-                                    ),
-                                  ),
-                                  _buildTimePicker(
-                                    'End Time',
-                                    session['end_time'],
-                                    (value) => _updateSession(
-                                      dayIndex,
-                                      sessionIndex,
-                                      'end_time',
-                                      value,
-                                    ),
-                                  ),
-                                  Text('Hours: ${session['hours_to_study']}'),
-                                ],
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed:
-                                    () =>
-                                        _deleteSession(dayIndex, sessionIndex),
-                              ),
-                            );
-                          }).toList()
-                          ..add(
-                            ListTile(
-                              title: const Text('Add Session'),
-                              leading: const Icon(Icons.add),
-                              onTap: () => _addSession(dayIndex),
+                  )
+                  : ListView.builder(
+                    itemCount: studyPlan.length,
+                    itemBuilder: (context, dayIndex) {
+                      final day = studyPlan[dayIndex];
+                      return Card(
+                        margin: const EdgeInsets.all(8),
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: ExpansionTile(
+                          title: Text(
+                            'Date: ${day['study_date']} (${day['total_hours']} hours)',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                  );
-                },
-              ),
+                          subtitle: Text(
+                            'Subject: ${day['subject']}',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => _deleteDay(dayIndex),
+                          ),
+                          children:
+                              day['sessions'].asMap().entries.map<Widget>((
+                                  entry,
+                                ) {
+                                  final sessionIndex = entry.key;
+                                  final session = entry.value;
+                                  return Card(
+                                    margin: const EdgeInsets.symmetric(
+                                      vertical: 4,
+                                      horizontal: 8,
+                                    ),
+                                    elevation: 1,
+                                    child: ListTile(
+                                      title: Text(
+                                        'Session ${sessionIndex + 1}',
+                                        style: const TextStyle(fontSize: 16),
+                                      ),
+                                      subtitle: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          _buildTimePicker(
+                                            'Start Time',
+                                            session['start_time'],
+                                            (value) => _updateSession(
+                                              dayIndex,
+                                              sessionIndex,
+                                              'start_time',
+                                              value,
+                                            ),
+                                          ),
+                                          _buildTimePicker(
+                                            'End Time',
+                                            session['end_time'],
+                                            (value) => _updateSession(
+                                              dayIndex,
+                                              sessionIndex,
+                                              'end_time',
+                                              value,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Hours: ${session['hours_to_study']}',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      trailing: IconButton(
+                                        icon: const Icon(
+                                          Icons.delete,
+                                          color: Colors.red,
+                                        ),
+                                        onPressed:
+                                            () => _deleteSession(
+                                              dayIndex,
+                                              sessionIndex,
+                                            ),
+                                      ),
+                                    ),
+                                  );
+                                }).toList()
+                                ..add(
+                                  ListTile(
+                                    title: const Text(
+                                      'Add Session',
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                                    leading: const Icon(
+                                      Icons.add,
+                                      color: Color(0xFF3674B5),
+                                    ),
+                                    onTap: () => _addSession(dayIndex),
+                                  ),
+                                ),
+                        ),
+                      );
+                    },
+                  ),
+        ),
+      ),
     );
   }
 }

@@ -15,16 +15,18 @@ class UpcomingTasksList extends StatefulWidget {
 
 class _UpcomingTasksListState extends State<UpcomingTasksList> {
   List<dynamic> tasks = [];
+  List<dynamic> studyPlans = [];
   final _storage = const FlutterSecureStorage();
   final _notificationService = NotificationService();
+  DateTime? lastScheduledSessionTime;
 
   @override
   void initState() {
     super.initState();
-    _fetchTasks();
+    fetchTasks();
   }
 
-  Future<void> _fetchTasks() async {
+  Future<void> fetchTasks() async {
     final String? token = await _storage.read(key: 'access_token');
     if (token == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -46,8 +48,7 @@ class _UpcomingTasksListState extends State<UpcomingTasksList> {
         setState(() {
           tasks = json.decode(response.body);
           print('Tasks loaded: $tasks');
-          // Commented out to avoid repeated reminders
-          // _scheduleTaskNotifications();
+          _fetchStudyPlansAndScheduleReminders();
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -64,30 +65,97 @@ class _UpcomingTasksListState extends State<UpcomingTasksList> {
     }
   }
 
-  // Future<void> _scheduleTaskNotifications() async {
-  //   for (var task in tasks) {
-  //     final taskId = task['id'] as int?;
-  //     final taskName = task['task_name'] ?? 'Unnamed Task';
-  //     final eventDate = task['event_date'] as String?;
-  //     if (taskId == null || eventDate == null) continue;
+  Future<void> _fetchStudyPlansAndScheduleReminders() async {
+    final String? token = await _storage.read(key: 'access_token');
+    if (token == null) return;
 
-  //     try {
-  //       final dueDate = DateTime.parse(eventDate);
-  //       final notificationTime = dueDate.subtract(const Duration(hours: 1));
-  //       if (notificationTime.isAfter(DateTime.now())) {
-  //         await _notificationService.scheduleNotification(
-  //           taskId,
-  //           'Task Reminder: $taskName',
-  //           'Due on ${DateFormat('yyyy-MM-dd').format(dueDate)}',
-  //           notificationTime,
-  //         );
-  //         print('Scheduled notification for task $taskId at $notificationTime');
-  //       }
-  //     } catch (e) {
-  //       print('Error scheduling notification for task $taskId: $e');
-  //     }
-  //   }
-  // }
+    try {
+      final response = await http.get(
+        Uri.parse('http://192.168.1.4:8000/api/study-plans/'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+      print(
+        'Fetch study plans response: ${response.statusCode} - ${response.body}',
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          studyPlans = json.decode(response.body);
+        });
+        await _scheduleStudyReminders();
+      }
+    } catch (e) {
+      print('Fetch study plans error: $e');
+    }
+  }
+
+  Future<void> _scheduleStudyReminders() async {
+    DateTime? nextSessionTime;
+    String? nextSubject;
+    String? nextStartTimeStr;
+
+    final now = DateTime.now();
+    final oneHourFromNow = now.add(const Duration(hours: 1));
+
+    for (var plan in studyPlans) {
+      final planData = plan['plan'];
+      for (var day in planData) {
+        final studyDate = DateTime.parse(day['study_date']);
+        for (var session in day['sessions']) {
+          final startTimeStr = session['start_time'];
+          final startDateTime = DateTime(
+            studyDate.year,
+            studyDate.month,
+            studyDate.day,
+            int.parse(startTimeStr.split(':')[0]),
+            int.parse(startTimeStr.split(':')[1]),
+          );
+          if (startDateTime.isAfter(now) &&
+              (nextSessionTime == null ||
+                  startDateTime.isBefore(nextSessionTime))) {
+            nextSessionTime = startDateTime;
+            nextSubject = day['subject'];
+            nextStartTimeStr = startTimeStr;
+          }
+        }
+      }
+    }
+
+    if (nextSessionTime != null && nextSessionTime.isBefore(oneHourFromNow)) {
+      if (lastScheduledSessionTime == null ||
+          !nextSessionTime.isAtSameMomentAs(lastScheduledSessionTime!)) {
+        final reminderTime = nextSessionTime.subtract(const Duration(hours: 1));
+        if (reminderTime.isAfter(now)) {
+          await _notificationService.cancelAllNotifications();
+          await _notificationService.scheduleNotification(
+            studyPlans.isNotEmpty ? studyPlans[0]['event_id'] : 0,
+            'Study Reminder',
+            'Time to study $nextSubject at $nextStartTimeStr',
+            reminderTime,
+          );
+          print('Scheduled study reminder for $nextSubject at $reminderTime');
+          lastScheduledSessionTime = nextSessionTime;
+        } else {
+          await _notificationService.cancelAllNotifications();
+          await _notificationService.showNotification(
+            studyPlans.isNotEmpty ? studyPlans[0]['event_id'] : 0,
+            'Study Reminder',
+            'Time to study $nextSubject at $nextStartTimeStr',
+          );
+          print('Showing immediate study reminder for $nextSubject');
+          lastScheduledSessionTime = nextSessionTime;
+        }
+      } else {
+        print('Reminder for this session already scheduled');
+      }
+    } else {
+      print('No upcoming study session within the next hour');
+      lastScheduledSessionTime = null;
+    }
+  }
 
   Future<void> _updateTaskStatus(int taskId, String newStatus) async {
     if (taskId <= 0) {
@@ -120,7 +188,7 @@ class _UpcomingTasksListState extends State<UpcomingTasksList> {
       );
 
       if (response.statusCode == 200) {
-        await _fetchTasks();
+        await fetchTasks();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Task status updated successfully')),
         );
@@ -136,7 +204,7 @@ class _UpcomingTasksListState extends State<UpcomingTasksList> {
           taskId,
           'Task Status Updated',
           '$taskName is now $newStatus',
-          saveToBackend: false, // Prevent duplicate save
+          saveToBackend: false,
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -180,6 +248,7 @@ class _UpcomingTasksListState extends State<UpcomingTasksList> {
               subject: subject,
               startDate: startDate.split('T')[0],
               examDate: eventDate.split('T')[0],
+              onPlanSaved: fetchTasks,
             ),
       ),
     );
@@ -190,9 +259,31 @@ class _UpcomingTasksListState extends State<UpcomingTasksList> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Upcoming Tasks',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        Container(
+          padding: const EdgeInsets.all(16.0),
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Color(0xFFDAF5F3),
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(12),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 2,
+                blurRadius: 5,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: const Text(
+            'Upcoming Tasks',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF6C8D8A),
+            ),
+          ),
         ),
         const SizedBox(height: 10),
         tasks.isEmpty
@@ -214,14 +305,38 @@ class _UpcomingTasksListState extends State<UpcomingTasksList> {
 
                 return Card(
                   margin: const EdgeInsets.symmetric(vertical: 5),
-                  color: overdue ? Colors.red.shade100 : null,
+                  shape: RoundedRectangleBorder(
+                    side:
+                        overdue
+                            ? BorderSide(color: Colors.red, width: 2)
+                            : BorderSide.none,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 2,
                   child: ListTile(
-                    title: Text(task['task_name'] ?? 'Unnamed Task'),
-                    subtitle: Text(
-                      'Due date: ${dueDate.toLocal().toString().split(' ')[0]}',
+                    contentPadding: const EdgeInsets.all(12),
+                    title: Text(
+                      task['task_name'] ?? 'Unnamed Task',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    leading: const Icon(Icons.task),
+                    subtitle: Text(
+                      'Due: ${dueDate.toLocal().toString().split(' ')[0]}',
+                      style: TextStyle(
+                        color: overdue ? Colors.red : Colors.grey,
+                      ),
+                    ),
+                    leading: Icon(
+                      Icons.task,
+                      color: overdue ? Colors.red : Color(0XFF3674B5),
+                    ),
                     trailing: PopupMenuButton<String>(
+                      icon: const Icon(
+                        Icons.more_vert,
+                        color: Color(0XFF3674B5),
+                      ),
                       onSelected: (status) {
                         _updateTaskStatus(taskId, status);
                       },
@@ -229,23 +344,43 @@ class _UpcomingTasksListState extends State<UpcomingTasksList> {
                           (context) => [
                             const PopupMenuItem(
                               value: 'Complete',
-                              child: Text('Complete'),
+                              child: ListTile(
+                                leading: Icon(
+                                  Icons.check_circle,
+                                  color: Colors.green,
+                                ),
+                                title: Text('Complete'),
+                              ),
                             ),
                             const PopupMenuItem(
                               value: 'Not Complete',
-                              child: Text('Not Complete'),
+                              child: ListTile(
+                                leading: Icon(Icons.cancel, color: Colors.red),
+                                title: Text('Not Complete'),
+                              ),
                             ),
                             const PopupMenuItem(
                               value: 'Pending',
-                              child: Text('Pending'),
+                              child: ListTile(
+                                leading: Icon(
+                                  Icons.schedule,
+                                  color: Colors.orange,
+                                ),
+                                title: Text('Pending'),
+                              ),
                             ),
                             const PopupMenuItem(
                               value: 'Deleted',
-                              child: Text('Delete'),
+                              child: ListTile(
+                                leading: Icon(Icons.delete, color: Colors.red),
+                                title: Text('Delete'),
+                              ),
                             ),
                           ],
                     ),
-                    onTap: () => _navigateToStudyPlanEditor(task),
+                    onTap: () {
+                      _navigateToStudyPlanEditor(task);
+                    },
                   ),
                 );
               },

@@ -1,77 +1,65 @@
 import 'package:flutter/material.dart';
-import 'package:study_manager/screens/User_profile_screen.dart';
-import 'package:study_manager/screens/home_screen.dart';
-import 'package:study_manager/screens/user_account_screen.dart';
-import 'package:study_manager/widgets/task/completed_task.dart'; // Import your home screen
+import 'package:study_manager/widgets/bottom_bar/notch_bottom_bar_controller.dart';
 
-class SettingsPage extends StatefulWidget {
-  @override
-  _SettingsPageState createState() => _SettingsPageState();
-}
-
-class _SettingsPageState extends State<SettingsPage>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+class SettingsPage extends StatelessWidget {
+  const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      // Prevent the back button from showing up in the AppBar
-      onWillPop: () async {
-        // Returning false to disable the back button on Android
-        return false;
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('Settings'),
-          leading: null, // This will remove the back button
-          bottom: TabBar(
-            controller: _tabController,
-            tabs: [
-              Tab(text: 'General'),
-              Tab(text: 'Account'),
-              Tab(text: 'History'),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          controller: _tabController,
-          children: [GeneralTab(), AccountTab(), HistoryTab()],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Settings'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // Reset the bottom navigation bar index to Home (index 0)
+            final controller = NotchBottomBarController(index: 0);
+            controller.jumpTo(0);
+            Navigator.popUntil(context, ModalRoute.withName('/home'));
+          },
         ),
       ),
+      body: ListView(
+        padding: const EdgeInsets.all(16.0),
+        children: [
+          ListTile(
+            title: const Text('User Profile'),
+            subtitle: const Text('Manage your strengths, weaknesses, and study preferences'),
+            trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFF3674B5)),
+            onTap: () {
+              Navigator.pushNamed(context, '/user-profile');
+            },
+          ),
+          const Divider(),
+          ListTile(
+            title: const Text('User Account'),
+            subtitle: const Text('Update your profile and password'),
+            trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFF3674B5)),
+            onTap: () {
+              Navigator.pushNamed(context, '/user-account');
+            },
+          ),
+          const Divider(),
+          ListTile(
+            title: const Text('History'),
+            subtitle: const Text('View your activity history'),
+            trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFF3674B5)),
+            onTap: () {
+              // Placeholder for History screen
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('History screen coming soon!'),
+                  backgroundColor: Color(0xFF4CAF50),
+                  duration: Duration(seconds: 3),
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
+                ),
+              );
+            },
+          ),
+          const Divider(),
+        ],
+      ),
     );
-  }
-}
-
-class GeneralTab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(child: UserProfileScreen());
-  }
-}
-
-class AccountTab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(child: UserAccountScreen());
-  }
-}
-
-class HistoryTab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(child: CompletedTasksList());
   }
 }

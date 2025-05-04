@@ -10,16 +10,18 @@ import 'package:study_manager/screens/Welcome_screen.dart';
 import 'package:study_manager/screens/notification_screen.dart';
 import 'package:study_manager/screens/quiz_menu_screen.dart';
 import 'package:study_manager/screens/settings_screen.dart';
+import 'package:study_manager/screens/user_progress_scren.dart';
 import 'package:study_manager/services/notification_service.dart';
 import 'package:study_manager/widgets/bottom_bar/notch_bottom_bar.dart';
 import 'package:study_manager/widgets/bottom_bar/notch_bottom_bar_controller.dart';
 import 'package:study_manager/widgets/task/task_list_page.dart';
-
 import 'screens/home_screen.dart';
 import 'screens/login_page.dart';
 import 'screens/register_page.dart';
 import 'screens/forgot_password_page.dart';
 import 'utils/fcm_utils.dart';
+import 'screens/user_profile_screen.dart';
+import 'screens/user_account_screen.dart';
 
 const AndroidNotificationChannel channel = AndroidNotificationChannel(
   'high_importance_channel',
@@ -70,11 +72,14 @@ Future<void> main() async {
 
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
+        AndroidFlutterLocalNotificationsPlugin
+      >()
       ?.createNotificationChannel(channel);
 
   FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    print('Received a message in the foreground: ${message.notification?.title}');
+    print(
+      'Received a message in the foreground: ${message.notification?.title}',
+    );
     RemoteNotification? notification = message.notification;
     AndroidNotification? android = message.notification?.android;
 
@@ -129,8 +134,9 @@ class _MyAppState extends State<MyApp> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const QuizMenuScreen(),
-     TaskFormPage(),
-     SettingsPage(),
+    const TaskFormPage(),
+    const UserProgressScreen(),
+    const SettingsPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -146,62 +152,121 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       title: 'Personalized Study Planner',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primaryColor: const Color(0xFFB4EBE6),
+        scaffoldBackgroundColor: const Color(0xFFFFFDF6),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFFB4EBE6),
+          foregroundColor: Color(0xFF080B0B),
+          elevation: 0,
+          centerTitle: true,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF3674B5),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(foregroundColor: const Color(0xFF3674B5)),
+        ),
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: true,
+          fillColor: Color.fromRGBO(180, 235, 230, 0.2),
+          labelStyle: TextStyle(color: Color(0xFF080B0B)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+          ),
+        ),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Color(0xFF080B0B)),
+          bodyMedium: TextStyle(color: Color(0xFF080B0B)),
+          headlineSmall: TextStyle(
+            color: Color(0xFF080B0B),
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) =>  WelcomePage(),
-        '/login': (context) =>  LoginPage(),
-        '/register': (context) =>  RegisterPage(),
-        '/forgotPassword': (context) =>  ForgotPasswordPage(),
-        '/add-task': (context) =>  TaskFormPage(),
-        '/task-list': (context) =>  TaskListPage(),
+        '/': (context) => WelcomePage(),
+        '/login': (context) => LoginPage(),
+        '/register': (context) => RegisterPage(),
+        '/forgotPassword': (context) => ForgotPasswordPage(),
+        '/add-task': (context) => const TaskFormPage(),
+        '/task-list': (context) => TaskListPage(),
         '/notifications': (context) => const NotificationScreen(),
-        '/home': (context) => WillPopScope(
-              onWillPop: () async {
-                return false;
-              },
+        '/user-profile': (context) => const UserProfileScreen(),
+        '/user-account': (context) => const UserAccountScreen(),
+        '/home':
+            (context) => WillPopScope(
+              onWillPop: () async => false,
               child: SafeArea(
                 child: Scaffold(
                   body: _screens[_controller.index],
                   bottomNavigationBar: AnimatedNotchBottomBar(
                     notchBottomBarController: _controller,
                     bottomBarItems: [
-                      const BottomBarItem(
-                        inActiveItem: Icon(Icons.home),
-                        activeItem: Icon(Icons.home, color: Colors.blue),
+                      BottomBarItem(
+                        inActiveItem: Image.asset('assets/home.png', scale: 20),
+                        activeItem: Image.asset('assets/home.png', scale: 20),
                         itemLabel: 'Home',
                       ),
-                      const BottomBarItem(
-                        inActiveItem: Icon(Icons.quiz_rounded),
-                        activeItem: Icon(
-                          Icons.quiz_rounded,
-                          color: Colors.blue,
-                        ),
+                      BottomBarItem(
+                        inActiveItem: Image.asset('assets/quiz.png', scale: 20),
+                        activeItem: Image.asset('assets/quiz.png', scale: 20),
                         itemLabel: 'Quiz',
                       ),
-                      const BottomBarItem(
-                        inActiveItem: Icon(Icons.add_box_rounded),
-                        activeItem: Icon(
-                          Icons.add_box_rounded,
-                          color: Colors.blue,
+                      BottomBarItem(
+                        inActiveItem: Image.asset(
+                          'assets/event.png',
+                          scale: 20,
                         ),
-                        itemLabel: 'Events',
+                        activeItem: Image.asset('assets/event.png', scale: 20),
+                        itemLabel: 'Event',
                       ),
-                      const BottomBarItem(
-                        inActiveItem: Icon(Icons.settings),
-                        activeItem: Icon(Icons.settings, color: Colors.blue),
+                      BottomBarItem(
+                        inActiveItem: Image.asset(
+                          'assets/progress.png',
+                          scale: 20,
+                        ),
+                        activeItem: Image.asset(
+                          'assets/progress.png',
+                          scale: 20,
+                        ),
+                        itemLabel: 'Progress',
+                      ),
+                      BottomBarItem(
+                        inActiveItem: Image.asset(
+                          'assets/settings.png',
+                          scale: 20,
+                        ),
+                        activeItem: Image.asset(
+                          'assets/settings.png',
+                          scale: 20,
+                        ),
                         itemLabel: 'Settings',
                       ),
                     ],
                     onTap: _onItemTapped,
-                    kIconSize: 24.0,
-                    kBottomRadius: 28.0,
+                    kIconSize: 28.0,
+                    kBottomRadius: 16.0,
                     showShadow: true,
                     showLabel: true,
-                    notchColor: Colors.white,
-                    durationInMilliSeconds: 300,
+                    itemLabelStyle: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF080B0B),
+                      fontWeight: FontWeight.w500,
+                    ),
+                    notchColor: const Color(0xFFB4EBE6),
+                    color: const Color(0xFFB4EBE6),
+                    bottomBarWidth: MediaQuery.of(context).size.width,
+                    durationInMilliSeconds: 200,
                   ),
                 ),
               ),

@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:study_manager/widgets/task/date_picker_field.dart';
 import 'package:study_manager/widgets/task/priority_selector.dart';
 import 'package:study_manager/widgets/task/task_service.dart';
+import 'package:study_manager/widgets/bottom_bar/notch_bottom_bar_controller.dart';
 
 class TaskFormPage extends StatefulWidget {
+  const TaskFormPage({super.key});
+
   @override
   _TaskFormPageState createState() => _TaskFormPageState();
 }
@@ -18,7 +21,7 @@ class _TaskFormPageState extends State<TaskFormPage> {
   String _taskType = 'Exam';
   double _estimatedHours = 1.0;
   String _taskName = '';
-  List<String> _skipDays = []; // New field for skip days
+  List<String> _skipDays = [];
   bool _isLoading = false;
 
   final _subjects = ['OOP', 'DSA', 'SE'];
@@ -33,19 +36,27 @@ class _TaskFormPageState extends State<TaskFormPage> {
     'Sunday',
   ];
 
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor:
+            isError ? const Color(0xFFF44336) : const Color(0xFF4CAF50),
+        duration: const Duration(seconds: 5),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      // Validate skip days
       if (_skipDays.length >= 7) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Please leave at least one day available for studying.',
-            ),
-            backgroundColor: Colors.red,
-          ),
+        _showSnackBar(
+          'Please leave at least one day available for studying.',
+          isError: true,
         );
         return;
       }
@@ -63,10 +74,9 @@ class _TaskFormPageState extends State<TaskFormPage> {
         taskType: _taskType,
         estimatedHours: _estimatedHours,
         taskName: _taskName,
-        skipDays: _skipDays, // Pass skip days to TaskService
+        skipDays: _skipDays,
       );
 
-      // Save task to backend
       final result = await TaskService().saveTaskToBackend(task);
 
       setState(() {
@@ -74,26 +84,11 @@ class _TaskFormPageState extends State<TaskFormPage> {
       });
 
       if (result['success']) {
-        // Add task locally for UI
         TaskService().addTask(task);
-        
-
-        // Show success message
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Task saved successfully!')));
-
-        // Navigate to TaskListPage
+        _showSnackBar('Task saved successfully!', isError: false);
         Navigator.pushNamed(context, '/task-list');
       } else {
-        // Show specific error message from backend
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['error'] ?? 'Failed to save task.'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 5),
-          ),
-        );
+        _showSnackBar(result['error'] ?? 'Failed to save task.', isError: true);
       }
     }
   }
@@ -101,20 +96,27 @@ class _TaskFormPageState extends State<TaskFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Add Task')),
+      appBar: AppBar(
+        title: const Text('Add Task'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // Reset the bottom navigation bar index to Home (index 0)
+            final _controller = NotchBottomBarController(index: 0);
+            _controller.jumpTo(0);
+            Navigator.popUntil(context, ModalRoute.withName('/home'));
+          },
+        ),
+      ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Task Name
               TextFormField(
-                decoration: InputDecoration(
-                  labelText: 'Task Name',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Task Name'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a task name';
@@ -125,14 +127,9 @@ class _TaskFormPageState extends State<TaskFormPage> {
                   _taskName = value ?? '';
                 },
               ),
-              SizedBox(height: 16),
-
-              // Subject Dropdown
+              const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  labelText: 'Subject',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Subject'),
                 value: _subjects.contains(_subject) ? _subject : null,
                 items:
                     _subjects
@@ -151,14 +148,9 @@ class _TaskFormPageState extends State<TaskFormPage> {
                 validator:
                     (value) => value == null ? 'Please select a subject' : null,
               ),
-              SizedBox(height: 16),
-
-              // Task Type Dropdown
+              const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  labelText: 'Task Type',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Task Type'),
                 value: _taskType,
                 items:
                     _taskTypes
@@ -173,9 +165,7 @@ class _TaskFormPageState extends State<TaskFormPage> {
                   });
                 },
               ),
-              SizedBox(height: 16),
-
-              // Exam Date
+              const SizedBox(height: 16),
               DatePickerField(
                 label: 'Exam/Target Date',
                 selectedDate: _examDate,
@@ -185,9 +175,7 @@ class _TaskFormPageState extends State<TaskFormPage> {
                   });
                 },
               ),
-              SizedBox(height: 16),
-
-              // Study Start Date
+              const SizedBox(height: 16),
               DatePickerField(
                 label: 'Study Start Date',
                 selectedDate: _studyStartDate,
@@ -197,9 +185,7 @@ class _TaskFormPageState extends State<TaskFormPage> {
                   });
                 },
               ),
-              SizedBox(height: 16),
-
-              // Priority Selector
+              const SizedBox(height: 16),
               PrioritySelector(
                 selectedPriority: _priority,
                 onPriorityChanged: (priority) {
@@ -208,13 +194,10 @@ class _TaskFormPageState extends State<TaskFormPage> {
                   });
                 },
               ),
-              SizedBox(height: 16),
-
-              // Estimated Hours
+              const SizedBox(height: 16),
               TextFormField(
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Estimated Study Hours',
-                  border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.number,
                 initialValue: '1.0',
@@ -232,14 +215,14 @@ class _TaskFormPageState extends State<TaskFormPage> {
                   _estimatedHours = double.parse(value!);
                 },
               ),
-              SizedBox(height: 16),
-
-              // Skip Days Selector
+              const SizedBox(height: 16),
               Text(
                 'Skip Days',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Wrap(
                 spacing: 8.0,
                 runSpacing: 4.0,
@@ -260,33 +243,23 @@ class _TaskFormPageState extends State<TaskFormPage> {
                       );
                     }).toList(),
               ),
-              SizedBox(height: 16),
-
-              // Notes
+              const SizedBox(height: 16),
               TextFormField(
-                decoration: InputDecoration(
-                  labelText: 'Notes',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Notes'),
                 maxLines: 4,
                 onSaved: (value) {
                   _notes = value ?? '';
                 },
               ),
-              SizedBox(height: 24),
-
-              // Submit Button
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _submitForm,
                   child:
                       _isLoading
-                          ? CircularProgressIndicator(color: Colors.white)
-                          : Text('Add Task'),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                  ),
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('Add Task'),
                 ),
               ),
             ],

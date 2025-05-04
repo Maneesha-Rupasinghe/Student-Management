@@ -25,98 +25,102 @@ class StudyPreferencesWidget extends StatelessWidget {
       children: [
         const Text(
           "Study Preferences",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF3674B5),
+          ),
         ),
         const SizedBox(height: 10),
-
-        // Hours per Day
-        Row(
-          children: [
-            const Text("Hours per Day: "),
-            Expanded(
-              child: Slider(
-                value: hoursPerDay.toDouble(),
-                min: 1,
-                max: 12,
-                divisions: 11,
-                label: '$hoursPerDay hours',
-                onChanged: (value) {
-                  onHoursPerDayChanged(value.toInt());
+        Card(
+          elevation: 1,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      "Hours per Day: ",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    Expanded(
+                      child: Slider(
+                        value: hoursPerDay.toDouble(),
+                        min: 1,
+                        max: 12,
+                        divisions: 11,
+                        label: '$hoursPerDay hours',
+                        activeColor: const Color(0xFF3674B5),
+                        inactiveColor: Colors.grey[300],
+                        thumbColor: const Color(0xFF3674B5),
+                        onChanged: (value) {
+                          onHoursPerDayChanged(value.toInt());
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Text(
+                      "Days per Week: ",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    Expanded(
+                      child: Slider(
+                        value: daysPerWeek.toDouble(),
+                        min: 1,
+                        max: 7,
+                        divisions: 6,
+                        label: '$daysPerWeek days',
+                        activeColor: const Color(0xFF3674B5),
+                        inactiveColor: Colors.grey[300],
+                        thumbColor: const Color(0xFF3674B5),
+                        onChanged: (value) {
+                          onDaysPerWeekChanged(value.toInt());
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          "Preferred Study Time:",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 5),
+        ...["Morning", "Day", "Night", "Any time"].map((time) {
+          return Card(
+            elevation: 1,
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 4,
+              ),
+              title: Text(time, style: const TextStyle(fontSize: 16)),
+              leading: Radio<String>(
+                value: time,
+                groupValue: preferredStudyTime,
+                activeColor: const Color(0xFF3674B5),
+                onChanged: (String? value) {
+                  if (value != null) {
+                    onPreferredStudyTimeChanged(value);
+                  }
                 },
               ),
             ),
-          ],
-        ),
-
-        // Days per Week
-        Row(
-          children: [
-            const Text("Days per Week: "),
-            Expanded(
-              child: Slider(
-                value: daysPerWeek.toDouble(),
-                min: 1,
-                max: 7,
-                divisions: 6,
-                label: '$daysPerWeek days',
-                onChanged: (value) {
-                  onDaysPerWeekChanged(value.toInt());
-                },
-              ),
-            ),
-          ],
-        ),
-
-        // Preferred Study Time
-        const Text("Preferred Study Time:"),
-        ListTile(
-          title: const Text("Morning"),
-          leading: Radio<String>(
-            value: "Morning",
-            groupValue: preferredStudyTime,
-            onChanged: (String? value) {
-              if (value != null) {
-                onPreferredStudyTimeChanged(value);
-              }
-            },
-          ),
-        ),
-        ListTile(
-          title: const Text("Day"),
-          leading: Radio<String>(
-            value: "Day",
-            groupValue: preferredStudyTime,
-            onChanged: (String? value) {
-              if (value != null) {
-                onPreferredStudyTimeChanged(value);
-              }
-            },
-          ),
-        ),
-        ListTile(
-          title: const Text("Night"),
-          leading: Radio<String>(
-            value: "Night",
-            groupValue: preferredStudyTime,
-            onChanged: (String? value) {
-              if (value != null) {
-                onPreferredStudyTimeChanged(value);
-              }
-            },
-          ),
-        ),
-        ListTile(
-          title: const Text("Any time"),
-          leading: Radio<String>(
-            value: "Any time",
-            groupValue: preferredStudyTime,
-            onChanged: (String? value) {
-              if (value != null) {
-                onPreferredStudyTimeChanged(value);
-              }
-            },
-          ),
-        ),
+          );
+        }).toList(),
       ],
     );
   }

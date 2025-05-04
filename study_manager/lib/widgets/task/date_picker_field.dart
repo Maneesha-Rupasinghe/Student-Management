@@ -32,22 +32,37 @@ class DatePickerField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.titleMedium,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
         ),
         const SizedBox(height: 8),
         InkWell(
           onTap: () => _selectDate(context),
           child: InputDecorator(
             decoration: InputDecoration(
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              filled: true,
+              fillColor: Colors.grey[50],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+              suffixIcon: const Icon(
+                Icons.calendar_today,
+                color: Color(0XFF3674B5),
+              ),
             ),
             child: Text(
               selectedDate != null
                   ? DateFormat('yyyy-MM-dd').format(selectedDate!)
                   : 'Select Date',
               style: TextStyle(
-                color: selectedDate != null ? Colors.black : Colors.grey,
+                fontSize: 16,
+                color: selectedDate != null ? Colors.black87 : Colors.grey,
               ),
             ),
           ),

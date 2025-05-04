@@ -4,21 +4,20 @@ class WelcomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFFFAF6E9),
       body: SafeArea(
         child: Column(
           children: [
-            // Image part (upper part of the screen)
             Container(
-              height: MediaQuery.of(context).size.height * 0.4, // 40% of the screen height
+              height: MediaQuery.of(context).size.height * 0.4,
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage('assets/loginBackground.png'), // Background image
+                  image: AssetImage('assets/loginBackground.png'),
                   fit: BoxFit.cover,
-                  alignment: Alignment.topCenter, // Align image to the top part of the screen
+                  alignment: Alignment.topCenter,
                 ),
               ),
             ),
-            // Welcome Section (below the image)
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -30,7 +29,7 @@ class WelcomePage extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black, // Text color
+                        color: Color(0xFF080B0B),
                       ),
                     ),
                     SizedBox(height: 20),
@@ -38,13 +37,19 @@ class WelcomePage extends StatelessWidget {
                       onPressed: () {
                         Navigator.pushNamed(context, '/login');
                       },
-                      child: Text('Log in'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        padding: EdgeInsets.symmetric(horizontal: 100, vertical: 15),
+                        backgroundColor: Color(0xFF3674B5),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 100,
+                          vertical: 15,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
+                      ),
+                      child: Text(
+                        'Log in',
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
                     SizedBox(height: 20),
@@ -52,13 +57,19 @@ class WelcomePage extends StatelessWidget {
                       onPressed: () {
                         Navigator.pushNamed(context, '/register');
                       },
-                      child: Text('Register'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        padding: EdgeInsets.symmetric(horizontal: 100, vertical: 15),
+                        backgroundColor: Color(0xFF3674B5),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 100,
+                          vertical: 15,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
+                      ),
+                      child: Text(
+                        'Register',
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
                   ],

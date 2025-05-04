@@ -15,7 +15,7 @@ from users.models import QuizQuestion, QuizResult, StudyPlan, TaskEvent, UserPre
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import DeviceToken, Notification
+from .models import DeviceToken, Notification, Resource
 
 # from .utils import send_push_notification
 
@@ -23,10 +23,12 @@ from .models import DeviceToken, Notification
 from .serializers import (
     NotificationSerializer,
     QuizQuestionSerializer,
+    QuizResultSerializer,
     ResourceSerializer,
     TaskEventSerializer,
     UserPreferenceSerializer,
     UserSerializer,
+    UsersResourceSerializer,
 )
 from rest_framework.permissions import IsAuthenticated
 
@@ -1025,6 +1027,7 @@ class TestNotificationView(APIView):
             {"success": "Notification saved"}, status=status.HTTP_201_CREATED
         )
 
+
 class NotificationListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1032,6 +1035,7 @@ class NotificationListView(APIView):
         notifications = Notification.objects.filter(user=request.user)
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data)
+
 
 class NotificationSaveView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1049,6 +1053,7 @@ class NotificationSaveView(APIView):
         )
         serializer = NotificationSerializer(notification)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 class TaskStatusUpdateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -1074,32 +1079,158 @@ class TaskStatusUpdateView(APIView):
                 {"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
+
 class NotificationReadView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, notification_id):
         try:
-            notification = Notification.objects.get(id=notification_id, user=request.user)
+            notification = Notification.objects.get(
+                id=notification_id, user=request.user
+            )
             notification.is_read = not notification.is_read  # Toggle read/unread
             notification.save()
             serializer = NotificationSerializer(notification)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Notification.DoesNotExist:
             return Response(
-                {"error": "Notification not found"},
-                status=status.HTTP_404_NOT_FOUND
+                {"error": "Notification not found"}, status=status.HTTP_404_NOT_FOUND
             )
+
     permission_classes = [IsAuthenticated]
 
     def patch(self, request, notification_id):
         try:
-            notification = Notification.objects.get(id=notification_id, user=request.user)
+            notification = Notification.objects.get(
+                id=notification_id, user=request.user
+            )
             notification.is_read = not notification.is_read  # Toggle read/unread
             notification.save()
             serializer = NotificationSerializer(notification)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except Notification.DoesNotExist:
             return Response(
-                {"error": "Notification not found"},
-                status=status.HTTP_404_NOT_FOUND
+                {"error": "Notification not found"}, status=status.HTTP_404_NOT_FOUND
             )
+
+
+class GetAllStudyPlansView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        study_plans = StudyPlan.objects.filter(user=request.user)
+        plans_data = []
+        for plan in study_plans:
+            plans_data.append(
+                {
+                    "event_id": plan.event_id_id,
+                    "plan": plan.plan,
+                }
+            )
+        return Response(plans_data, status=status.HTTP_200_OK)
+
+
+class QuizResultSaveView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data
+        serializer = QuizResultSerializer(data=data)
+        if serializer.is_valid():
+            QuizResult.objects.create(
+                user=request.user,
+                subject=serializer.validated_data["subject"],
+                level=serializer.validated_data["level"],
+                results=serializer.validated_data["results"],
+            )
+            return Response(
+                {"message": "Quiz results saved successfully"},
+                status=status.HTTP_201_CREATED,
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GetQuizResultsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        quiz_results = QuizResult.objects.filter(user=user)
+
+        # Group results by subject
+        results_by_subject = {}
+        for result in quiz_results:
+            subject = result.subject
+            if subject not in results_by_subject:
+                results_by_subject[subject] = {}
+            results_by_subject[subject][result.level] = result.results
+
+        # Ensure all levels are included, defaulting to null if not present
+        for subject_data in results_by_subject.values():
+            for level in ["Beginner", "Intermediate", "Advanced"]:
+                if level not in subject_data:
+                    subject_data[level] = None
+
+        # Calculate overall averages for each level
+        overall_scores = {
+            "Beginner": {"total": 0, "count": 0},
+            "Intermediate": {"total": 0, "count": 0},
+            "Advanced": {"total": 0, "count": 0},
+        }
+
+        for subject_data in results_by_subject.values():
+            for level in ["Beginner", "Intermediate", "Advanced"]:
+                if subject_data[level] is not None:
+                    # Remove '%' and convert to float
+                    percentage = float(subject_data[level].replace('%', ''))
+                    overall_scores[level]["total"] += percentage
+                    overall_scores[level]["count"] += 1
+
+        # Compute averages (or null if no results for that level)
+        overall_averages = {}
+        for level in overall_scores:
+            if overall_scores[level]["count"] > 0:
+                average = overall_scores[level]["total"] / overall_scores[level]["count"]
+                overall_averages[level] = f"{average:.2f}%"
+            else:
+                overall_averages[level] = None
+
+        # Prepare subject-wise results
+        serialized_results = [
+            {"subject": subject, "levels": data}
+            for subject, data in results_by_subject.items()
+        ]
+
+        # Combine overall averages and subject-wise results
+        response_data = {
+            "overall": overall_averages,
+            "subjects": serialized_results
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
+class GetRecommendedResourcesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        # Get query parameters
+        study_level = request.query_params.get('study_level')
+        subject = request.query_params.get('subject')
+
+        # Validate query parameters
+        if not study_level or not subject:
+            return Response(
+                {"error": "study_level and subject are required parameters"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Filter resources based on study_level and subject
+        resources = Resource.objects.filter(
+            study_level=study_level,
+            subject=subject
+        )
+
+        # Serialize the resources
+        serializer = ResourceSerializer(resources, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

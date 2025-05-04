@@ -11,7 +11,7 @@ class UserAccountScreen extends StatefulWidget {
 }
 
 class _UserAccountScreenState extends State<UserAccountScreen> {
-  final _storage = FlutterSecureStorage();
+  final _storage = const FlutterSecureStorage();
   String _username = '';
   String _email = '';
   final _usernameController = TextEditingController();
@@ -19,6 +19,9 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
   final _oldPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  bool _isOldPasswordVisible = false;
+  bool _isNewPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   @override
   void initState() {
@@ -26,7 +29,19 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
     _fetchUserProfile();
   }
 
-  // Fetch user profile information (username and email)
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor:
+            isError ? const Color(0xFFF44336) : const Color(0xFF4CAF50),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
   Future<void> _fetchUserProfile() async {
     final String? token = await _storage.read(key: 'access_token');
 
@@ -47,13 +62,10 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
         _emailController.text = _email;
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to fetch user profile')),
-      );
+      _showSnackBar('Failed to fetch user profile', isError: true);
     }
   }
 
-  // Update user profile (name and email)
   Future<void> _updateProfile() async {
     final String? token = await _storage.read(key: 'access_token');
     final updatedData = {
@@ -71,22 +83,15 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
     );
 
     if (response.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully')),
-      );
+      _showSnackBar('Profile updated successfully', isError: false);
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to update profile')));
+      _showSnackBar('Failed to update profile', isError: true);
     }
   }
 
-  // Change user password
   Future<void> _changePassword() async {
     if (_newPasswordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
+      _showSnackBar('Passwords do not match', isError: true);
       return;
     }
 
@@ -106,17 +111,12 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
     );
 
     if (response.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password changed successfully')),
-      );
+      _showSnackBar('Password changed successfully', isError: false);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to change password')),
-      );
+      _showSnackBar('Failed to change password', isError: true);
     }
   }
 
-  // Delete user account
   Future<void> _deleteAccount() async {
     final String? token = await _storage.read(key: 'access_token');
 
@@ -129,20 +129,14 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
     );
 
     if (response.statusCode == 204) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Account deleted successfully')),
-      );
-      // Clear token and log out the user
+      _showSnackBar('Account deleted successfully', isError: false);
       await _storage.delete(key: 'access_token');
       Navigator.pushReplacementNamed(context, '/login');
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to delete account')));
+      _showSnackBar('Failed to delete account', isError: true);
     }
   }
 
-  // Logout
   Future<void> _logout() async {
     await _storage.delete(key: 'access_token');
     Navigator.pushReplacementNamed(context, '/login');
@@ -151,67 +145,274 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('User Account')),
+      appBar: AppBar(
+        title: const Text(
+          'User Account',
+          style: TextStyle(color: Colors.black),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFFB4EBE6), Color(0xFFB4EBE6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.black),
+            onPressed: _logout,
+            tooltip: 'Logout',
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundImage: AssetImage('assets/profile.jpeg'),
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF3674B5),
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.3),
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: const CircleAvatar(
+                        radius: 40,
+                        backgroundImage: AssetImage('assets/profile.jpeg'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Profile Information",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF3674B5),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _usernameController,
+                    decoration: InputDecoration(
+                      labelText: 'Username',
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Color(0xFF3674B5)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Color(0xFF3674B5)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3674B5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        elevation: 4,
+                      ),
+                      onPressed: _updateProfile,
+                      child: const Text(
+                        'Update Profile',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Change Password",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF3674B5),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _oldPasswordController,
+                    obscureText: !_isOldPasswordVisible,
+                    decoration: InputDecoration(
+                      labelText: 'Old Password',
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Color(0xFF3674B5)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _isOldPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: const Color(0xFF3674B5),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isOldPasswordVisible = !_isOldPasswordVisible;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _newPasswordController,
+                    obscureText: !_isNewPasswordVisible,
+                    decoration: InputDecoration(
+                      labelText: 'New Password',
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Color(0xFF3674B5)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _isNewPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: const Color(0xFF3674B5),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isNewPasswordVisible = !_isNewPasswordVisible;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _confirmPasswordController,
+                    obscureText: !_isConfirmPasswordVisible,
+                    decoration: InputDecoration(
+                      labelText: 'Confirm Password',
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: const BorderSide(color: Color(0xFF3674B5)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _isConfirmPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: const Color(0xFF3674B5),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isConfirmPasswordVisible =
+                                !_isConfirmPasswordVisible;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3674B5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        elevation: 4,
+                      ),
+                      onPressed: _changePassword,
+                      child: const Text(
+                        'Change Password',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Account Management",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF3674B5),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF44336),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        elevation: 4,
+                      ),
+                      onPressed: _deleteAccount,
+                      child: const Text(
+                        'Delete Account',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: _usernameController,
-                decoration: const InputDecoration(labelText: 'Username'),
-              ),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _updateProfile,
-                child: const Text('Update Profile'),
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: _oldPasswordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Old Password'),
-              ),
-              TextFormField(
-                controller: _newPasswordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'New Password'),
-              ),
-              TextFormField(
-                controller: _confirmPasswordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Confirm Password',
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _changePassword,
-                child: const Text('Change Password'),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _deleteAccount,
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: const Text('Delete Account'),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _logout,
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
-                child: const Text('Logout'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

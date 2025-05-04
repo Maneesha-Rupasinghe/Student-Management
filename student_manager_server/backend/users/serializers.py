@@ -171,3 +171,9 @@ class NotificationSerializer(serializers.ModelSerializer):
         fields = ["id", "title", "body", "timestamp", "is_read"]
 
 
+class UsersResourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Resource
+        fields = ['subject', 'resource', 'study_level']
+
+        

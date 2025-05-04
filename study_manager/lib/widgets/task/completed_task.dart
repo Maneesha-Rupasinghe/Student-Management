@@ -12,11 +12,9 @@ class _CompletedTasksListState extends State<CompletedTasksList> {
   List<dynamic> completedTasks = [];
   final _storage = FlutterSecureStorage();
 
-  // Fetch completed tasks from backend
   Future<void> _fetchCompletedTasks() async {
     final String? token = await _storage.read(key: 'access_token');
-
-    print("Fetching completed tasks..."); // Debugging print
+    print("Fetching completed tasks...");
 
     final response = await http.get(
       Uri.parse('http://192.168.1.4:8000/api/tasks/completed/'),
@@ -26,64 +24,110 @@ class _CompletedTasksListState extends State<CompletedTasksList> {
       },
     );
 
-    print("Response status: ${response.statusCode}"); // Debugging print
-    print("Response body: ${response.body}"); // Debugging print
+    print("Response status: ${response.statusCode}");
+    print("Response body: ${response.body}");
 
     if (response.statusCode == 200) {
       setState(() {
-        completedTasks = json.decode(response.body); // Save response data
+        completedTasks = json.decode(response.body);
       });
     } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to load completed tasks')));
-      print("Error loading tasks: ${response.statusCode}"); // Debugging print
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to load completed tasks')),
+      );
+      print("Error loading tasks: ${response.statusCode}");
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchCompletedTasks(); // Fetch completed tasks when the screen loads
-  }
-
-  // Method to show additional details for the selected task
   void _showTaskDetails(BuildContext context, dynamic task) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(task['task_name']),
-          content: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Subject: ${task['subject']}'),
-              Text('Start Date: ${task['start_date']}'),
-              Text('Event Date: ${task['event_date']}'),
-              Text('Estimated Study Hours: ${task['estimated_study_hours']}'),
-              Text('Notes: ${task['notes']}'),
-              Text('Priority: ${task['priority']}'),
-              Text('Status: ${task['status']}'),
-            ],
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Close'),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      task['task_name'],
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.grey),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Subject: ${task['subject']}',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                Text(
+                  'Start Date: ${task['start_date']}',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                Text(
+                  'Event Date: ${task['event_date']}',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                Text(
+                  'Estimated Study Hours: ${task['estimated_study_hours']}',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                Text(
+                  'Notes: ${task['notes']}',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                Text(
+                  'Priority: ${task['priority']}',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                Text(
+                  'Status: ${task['status']}',
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );
   }
 
   @override
+  void initState() {
+    super.initState();
+    _fetchCompletedTasks();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Completed Tasks')),
+      appBar: AppBar(
+        title: const Text('Completed Tasks'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue, Colors.blueAccent],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        elevation: 4,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView.builder(
@@ -91,17 +135,25 @@ class _CompletedTasksListState extends State<CompletedTasksList> {
           itemBuilder: (context, index) {
             final task = completedTasks[index];
             return Card(
-              margin: EdgeInsets.symmetric(vertical: 10),
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              color: Colors.green[50],
+              margin: const EdgeInsets.symmetric(vertical: 10),
               child: ListTile(
-                title: Text(task['task_name']),
-                subtitle: Text('Due date: ${task['event_date']}'),
-                leading: Icon(Icons.task),
-                trailing: Icon(Icons.arrow_forward),
-                onTap:
-                    () => _showTaskDetails(
-                      context,
-                      task,
-                    ), // Show task details on tap
+                contentPadding: const EdgeInsets.all(12),
+                title: Text(
+                  task['task_name'],
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text('Due: ${task['event_date']}'),
+                leading: const Icon(Icons.check_circle, color: Colors.green),
+                trailing: const Icon(Icons.arrow_forward, color: Colors.blue),
+                onTap: () => _showTaskDetails(context, task),
               ),
             );
           },

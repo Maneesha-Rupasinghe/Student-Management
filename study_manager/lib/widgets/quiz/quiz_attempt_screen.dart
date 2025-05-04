@@ -123,6 +123,8 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
             (context) => QuizResultScreen(
               correctAnswers: correctAnswers,
               totalQuestions: questions.length,
+              quizLevel: widget.level.capitalize(),
+              quizSubject: widget.subject, // Add the subject parameter
             ),
       ),
     );
@@ -164,14 +166,12 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Quiz results saved successfully!')),
         );
-
         print("About to call updateStudyPlans for subject: ${widget.subject}");
         try {
           final studyPlanResult = await _taskService.updateStudyPlans(
             widget.subject,
           );
           print("Study plans update result: $studyPlanResult");
-
           if (studyPlanResult['success']) {
             final updatedPlans =
                 studyPlanResult['data']['updated_plans'] as List;
@@ -234,25 +234,71 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
   Widget build(BuildContext context) {
     if (isLoading) {
       return Scaffold(
-        appBar: AppBar(title: Text('${widget.subject} - ${widget.level} Quiz')),
+        appBar: AppBar(
+          title: Text(
+            '${widget.subject} - ${widget.level} Quiz',
+            style: const TextStyle(color: Colors.white),
+          ),
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF3674B5), Color(0xFF3674B5)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+        ),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     if (errorMessage != null) {
       return Scaffold(
-        appBar: AppBar(title: Text('${widget.subject} - ${widget.level} Quiz')),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(errorMessage!),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: fetchQuizData,
-                child: const Text('Retry'),
+        appBar: AppBar(
+          title: Text(
+            '${widget.subject} - ${widget.level} Quiz',
+            style: const TextStyle(color: Colors.white),
+          ),
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF3674B5), Color(0xFF3674B5)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
+            ),
+          ),
+        ),
+        body: Center(
+          child: Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    errorMessage!,
+                    style: const TextStyle(color: Colors.red, fontSize: 16),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3674B5),
+                    ),
+                    onPressed: fetchQuizData,
+                    child: const Text(
+                      'Retry',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       );
@@ -261,67 +307,118 @@ class _QuizAttemptScreenState extends State<QuizAttemptScreen> {
     final currentQuestion = questions[currentQuestionIndex];
 
     return Scaffold(
-      appBar: AppBar(title: Text('${widget.subject} - ${widget.level} Quiz')),
+      appBar: AppBar(
+        title: Text(
+          '${widget.subject} - ${widget.level} Quiz',
+          style: const TextStyle(color: Colors.white),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF3674B5), Color(0xFF3674B5)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Question ${currentQuestionIndex + 1}/${questions.length}',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              currentQuestion['question'],
-              style: const TextStyle(fontSize: 20),
-            ),
-            const SizedBox(height: 20),
-            ...List.generate(currentQuestion['choices'].length, (index) {
-              final choice = currentQuestion['choices'][index];
-              final isSelected = userAnswers[currentQuestionIndex] == choice;
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        isSelected ? Colors.blue.shade100 : Colors.white,
-                    foregroundColor: Colors.black,
-                    side: const BorderSide(color: Colors.grey),
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      userAnswers[currentQuestionIndex] = choice;
-                    });
-                  },
-                  child: Text(choice),
-                ),
-              );
-            }),
-            const Spacer(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ElevatedButton(
-                  onPressed: currentQuestionIndex > 0 ? previousQuestion : null,
-                  child: const Text('Previous'),
-                ),
-                ElevatedButton(
-                  onPressed:
-                      currentQuestionIndex < questions.length - 1
-                          ? nextQuestion
-                          : userAnswers.length == questions.length
-                          ? submitQuiz
-                          : null,
-                  child: Text(
-                    currentQuestionIndex < questions.length - 1
-                        ? 'Next'
-                        : 'Submit',
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3674B5).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
                   ),
+                  child: Text(
+                    'Question ${currentQuestionIndex + 1}/${questions.length}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF3674B5),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  currentQuestion['question'],
+                  style: const TextStyle(fontSize: 20),
+                ),
+                const SizedBox(height: 20),
+                ...List.generate(currentQuestion['choices'].length, (index) {
+                  final choice = currentQuestion['choices'][index];
+                  final isSelected =
+                      userAnswers[currentQuestionIndex] == choice;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            isSelected
+                                ? const Color(0xFF3674B5).withOpacity(0.1)
+                                : Colors.white,
+                        foregroundColor: Colors.black,
+                        side: const BorderSide(color: Color(0xFF3674B5)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          userAnswers[currentQuestionIndex] = choice;
+                        });
+                      },
+                      child: Text(choice),
+                    ),
+                  );
+                }),
+                const Spacer(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3674B5),
+                      ),
+                      onPressed:
+                          currentQuestionIndex > 0 ? previousQuestion : null,
+                      child: const Text(
+                        'Previous',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3674B5),
+                      ),
+                      onPressed:
+                          currentQuestionIndex < questions.length - 1
+                              ? nextQuestion
+                              : userAnswers.length == questions.length
+                              ? submitQuiz
+                              : null,
+                      child: Text(
+                        currentQuestionIndex < questions.length - 1
+                            ? 'Next'
+                            : 'Submit',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
