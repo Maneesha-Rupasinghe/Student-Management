@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:study_manager/widgets/bottom_bar/notch_bottom_bar_controller.dart';
+import 'package:study_manager/widgets/user/all_task_list.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -24,8 +25,13 @@ class SettingsPage extends StatelessWidget {
         children: [
           ListTile(
             title: const Text('User Profile'),
-            subtitle: const Text('Manage your strengths, weaknesses, and study preferences'),
-            trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFF3674B5)),
+            subtitle: const Text(
+              'Manage your strengths, weaknesses, and study preferences',
+            ),
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              color: Color(0xFF3674B5),
+            ),
             onTap: () {
               Navigator.pushNamed(context, '/user-profile');
             },
@@ -34,7 +40,10 @@ class SettingsPage extends StatelessWidget {
           ListTile(
             title: const Text('User Account'),
             subtitle: const Text('Update your profile and password'),
-            trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFF3674B5)),
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              color: Color(0xFF3674B5),
+            ),
             onTap: () {
               Navigator.pushNamed(context, '/user-account');
             },
@@ -43,18 +52,12 @@ class SettingsPage extends StatelessWidget {
           ListTile(
             title: const Text('History'),
             subtitle: const Text('View your activity history'),
-            trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFF3674B5)),
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              color: Color(0xFF3674B5),
+            ),
             onTap: () {
-              // Placeholder for History screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('History screen coming soon!'),
-                  backgroundColor: Color(0xFF4CAF50),
-                  duration: Duration(seconds: 3),
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
-                ),
-              );
+              Navigator.pushNamed(context, '/user-tasks');
             },
           ),
           const Divider(),

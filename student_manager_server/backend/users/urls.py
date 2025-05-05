@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     AddQuizQuestionsView,
     AddResourceView,
+    AllTaskEventListView,
     CompletedTasksView,
     CustomTokenObtainPairView,
     CustomTokenRefreshView,
@@ -47,6 +48,7 @@ urlpatterns = [
     path("user/preferences/", UserPreferenceView.as_view(), name="user-preferences"),
     path("study-plan/", StudyPlanView.as_view(), name="study-plan"),
     path("tasks/", TaskEventListView.as_view(), name="get-tasks"),
+    path("all_tasks/", AllTaskEventListView.as_view(), name="get-tasks"),
     path(
         "tasks/<int:task_id>/update-status/",
         UpdateTaskStatusView.as_view(),

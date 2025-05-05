@@ -15,6 +15,7 @@ import 'package:study_manager/services/notification_service.dart';
 import 'package:study_manager/widgets/bottom_bar/notch_bottom_bar.dart';
 import 'package:study_manager/widgets/bottom_bar/notch_bottom_bar_controller.dart';
 import 'package:study_manager/widgets/task/task_list_page.dart';
+import 'package:study_manager/widgets/user/all_task_list.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_page.dart';
 import 'screens/register_page.dart';
@@ -203,6 +204,7 @@ class _MyAppState extends State<MyApp> {
         '/notifications': (context) => const NotificationScreen(),
         '/user-profile': (context) => const UserProfileScreen(),
         '/user-account': (context) => const UserAccountScreen(),
+        '/user-tasks':(context)=>const AllTasksList(),
         '/home':
             (context) => WillPopScope(
               onWillPop: () async => false,

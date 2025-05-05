@@ -331,6 +331,21 @@ class TaskEventListView(APIView):
         tasks = (
             TaskEvent.objects.filter(user=user)
             .exclude(status="Deleted")
+            .exclude(status="Complete")
+            .order_by("event_date")
+        )
+
+        serializer = TaskEventSerializer(tasks, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class AllTaskEventListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user  # Get the logged-in user
+        tasks = (
+            TaskEvent.objects.filter(user=user)
+            .exclude(status="Deleted")
             .order_by("event_date")
         )
 
@@ -1182,7 +1197,7 @@ class GetQuizResultsView(APIView):
             for level in ["Beginner", "Intermediate", "Advanced"]:
                 if subject_data[level] is not None:
                     # Remove '%' and convert to float
-                    percentage = float(subject_data[level].replace('%', ''))
+                    percentage = float(subject_data[level].replace("%", ""))
                     overall_scores[level]["total"] += percentage
                     overall_scores[level]["count"] += 1
 
@@ -1190,7 +1205,9 @@ class GetQuizResultsView(APIView):
         overall_averages = {}
         for level in overall_scores:
             if overall_scores[level]["count"] > 0:
-                average = overall_scores[level]["total"] / overall_scores[level]["count"]
+                average = (
+                    overall_scores[level]["total"] / overall_scores[level]["count"]
+                )
                 overall_averages[level] = f"{average:.2f}%"
             else:
                 overall_averages[level] = None
@@ -1202,10 +1219,7 @@ class GetQuizResultsView(APIView):
         ]
 
         # Combine overall averages and subject-wise results
-        response_data = {
-            "overall": overall_averages,
-            "subjects": serialized_results
-        }
+        response_data = {"overall": overall_averages, "subjects": serialized_results}
 
         return Response(response_data, status=status.HTTP_200_OK)
 
@@ -1215,21 +1229,18 @@ class GetRecommendedResourcesView(APIView):
 
     def get(self, request, *args, **kwargs):
         # Get query parameters
-        study_level = request.query_params.get('study_level')
-        subject = request.query_params.get('subject')
+        study_level = request.query_params.get("study_level")
+        subject = request.query_params.get("subject")
 
         # Validate query parameters
         if not study_level or not subject:
             return Response(
                 {"error": "study_level and subject are required parameters"},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         # Filter resources based on study_level and subject
-        resources = Resource.objects.filter(
-            study_level=study_level,
-            subject=subject
-        )
+        resources = Resource.objects.filter(study_level=study_level, subject=subject)
 
         # Serialize the resources
         serializer = ResourceSerializer(resources, many=True)
