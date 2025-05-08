@@ -62,7 +62,7 @@ class RegisterView(APIView):
 
 
 class UpdateProfileView(APIView):
-    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+    permission_classes = [IsAuthenticated]  
 
     def put(self, request, *args, **kwargs):
         user = request.user  # Get the currently authenticated user
@@ -88,7 +88,7 @@ class DeleteProfileView(APIView):
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
-    # Optionally, override this view if you need custom token generation
+   
     pass
 
 
@@ -459,18 +459,18 @@ class GetStudyPlanView(APIView):
     permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
 
     def get(self, request, event_id, *args, **kwargs):
-        # Debugging - Check if event_id is passed correctly
-        print(f"Received event_id: {event_id}")  # Debugging print
+   
+        print(f"Received event_id: {event_id}")  
 
         # Debugging - Check if user is authenticated
-        print(f"Authenticated user: {request.user}")  # Debugging print
+        print(f"Authenticated user: {request.user}")  
 
         # Step 1: Retrieve the StudyPlan based on event_id
         try:
             study_plan = StudyPlan.objects.get(
                 event_id_id=event_id
             )  # Find the StudyPlan by event_id
-            print(f"Found study plan: {study_plan}")  # Debugging print
+            print(f"Found study plan: {study_plan}")  
         except StudyPlan.DoesNotExist:
             return Response(
                 {"error": "Study plan not found for the given event_id"},
@@ -833,7 +833,7 @@ class CompletedTasksView(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user  # Get the currently authenticated user
 
-        # Debugging print to check the user
+    
         print(f"Authenticated user: {user.username}")
 
         # Filter tasks where status is 'Complete' for the logged-in user
@@ -841,7 +841,7 @@ class CompletedTasksView(APIView):
             completed_tasks = TaskEvent.objects.filter(user=user, status="Complete")
             print(
                 f"Number of completed tasks found: {completed_tasks.count()}"
-            )  # Debugging print to check the number of tasks
+            )   
         except Exception as e:
             print(f"Error fetching tasks: {str(e)}")
             return Response(
@@ -874,7 +874,7 @@ class CompletedTasksView(APIView):
                 }
             )
 
-        # Debugging print to check what data is being returned
+        
         print(f"Returned task data: {task_data}")
 
         return Response(task_data, status=status.HTTP_200_OK)
